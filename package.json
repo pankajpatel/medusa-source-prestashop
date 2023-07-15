@@ -23,6 +23,7 @@
     "@babel/cli": "^7.14.3",
     "@babel/core": "^7.14.3",
     "@babel/preset-typescript": "^7.14.5",
+    "@types/qs": "^6.9.7",
     "babel-preset-medusa-package": "^1.1.19",
     "cross-env": "^7.0.3"
   },
@@ -33,8 +34,10 @@
   ],
   "dependencies": {
     "@medusajs/medusa": "^1.6.5",
+    "@medusajs/typeorm": "npm:@medusajs/typeorm@next",
     "axios-oauth-1.0a": "^0.3.6",
     "fast-xml-parser": "^4.0.12",
+    "qs": "^6.11.2",
     "url-exists-deep": "^2.1.4"
   }
 }

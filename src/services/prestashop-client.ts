@@ -8,6 +8,7 @@ import { TransactionBaseService } from "@medusajs/medusa";
 
 import { XMLParser, XMLBuilder, XMLValidator } from "fast-xml-parser";
 import urlExists from "url-exists-deep";
+import { stringify } from "qs";
 
 type InjectedDependencies = {
   manager: EntityManager;
@@ -19,8 +20,6 @@ class PrestashopClientService extends TransactionBaseService {
   protected transactionManager_: EntityManager;
   protected logger_: Logger;
   protected apiBaseUrl_: string;
-  protected endUrl: string;
-  protected endUrlXML: string;
 
   protected options_: PluginOptions;
   protected client_: AxiosInstance;
@@ -34,8 +33,6 @@ class PrestashopClientService extends TransactionBaseService {
     this.logger_ = container.logger;
     this.options_ = options;
     this.apiBaseUrl_ = `${options.prestashop_url}`;
-    this.endUrl = "/&ws_key="+options.consumer_key+"&output_format=JSON";
-    this.endUrlXML = "/&ws_key="+options.consumer_key;
 
     // https://farmaciapaseo51.com/api/products/1360/&ws_key=FZQX58LATQZGXAEVUTU4PMSNVT19QASS&output_format=JSON
 
@@ -78,15 +75,33 @@ class PrestashopClientService extends TransactionBaseService {
     this.defaultImagePrefix_ = options.image_prefix;
   }
 
+  get endUrl() {
+    return `/&${stringify(this.getPSReqParameters())}`;
+  }
+
+  get endUrlXML() {
+    return `/&${stringify(this.getPSReqParameters("xml"))}`;
+  }
+
+  getPSReqParameters(format: "json" | "xml" = "json") {
+    const params = {
+      ...(this.options_.additionalParams || {}),
+      ws_key: this.options_.consumer_key,
+    };
+
+    format === "json" && (params.output_format = format.toUpperCase());
+    return params;
+  }
+
   async retrieveProducts(): Promise<Record<string, any>[]> {
     return this.sendRequest(`/products/` + this.endUrl);
   }
 
   async downloadFile(url2): Promise<any> {
-    let url = url2 + this.endUrlXML
-    return axios({ url, responseType: "arraybuffer" }).then((res) => res.data)
+    let url = url2 + this.endUrlXML;
+    return axios({ url, responseType: "arraybuffer" }).then((res) => res.data);
   }
-  
+
   // downloadFile = (url) =>
   // axios({ url, responseType: "arraybuffer" }).then((res) => res.data);
 
@@ -104,14 +119,10 @@ class PrestashopClientService extends TransactionBaseService {
 
       let images = await parser.parse(imagesId.data);
 
-    
       let imagesTemp = [];
 
       if (images.prestashop.image.declination.length) {
-
         images.prestashop.image.declination.forEach((element) => {
-          
-
           imagesTemp.push(element);
         });
       } else {
@@ -119,10 +130,8 @@ class PrestashopClientService extends TransactionBaseService {
       }
       return imagesTemp;
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-
-    
   }
 
   async retrieveProduct(productId?: string): Promise<Record<string, any>[]> {
@@ -202,7 +211,7 @@ class PrestashopClientService extends TransactionBaseService {
   //   });
   // }
 
-  async retrieveInventoryData(sku: string): Promise<AxiosResponse<any, any>> {
+  async retrieveInventoryData(sku: string): Promise<AxiosResponse<any>> {
     return this.sendRequest(`/stockItems/${sku}`);
   }
 
@@ -226,45 +235,37 @@ class PrestashopClientService extends TransactionBaseService {
   //https://farmaciapaseo51.com/api/products/1360/&ws_key=FZQX58LATQZGXAEVUTU4PMSNVT19QASS&output_format=JSON
   async retrieveCategories(
     lastUpdatedTime?: string
-  ): Promise<AxiosResponse<any, any>> {
+  ): Promise<AxiosResponse<any>> {
     return this.sendRequest(`/categories/` + this.endUrl);
   }
 
-  async retrieveOptionsDefaults(): Promise<AxiosResponse<any, any>> {
+  async retrieveOptionsDefaults(): Promise<AxiosResponse<any>> {
     return this.sendRequest(`/product_options/` + this.endUrl);
   }
 
-  async retrieveOptionsValues(): Promise<AxiosResponse<any, any>> {
+  async retrieveOptionsValues(): Promise<AxiosResponse<any>> {
     return this.sendRequest(`/product_option_values/` + this.endUrl);
   }
 
-    async retrieveOptionValues(
-    optionId?: string
-  ): Promise<AxiosResponse<any, any>> {
+  async retrieveOptionValues(optionId?: string): Promise<AxiosResponse<any>> {
     return this.sendRequest(`/product_option_values/` + optionId + this.endUrl);
   }
 
-  async retrieveStockValues(
-    stockId?: string
-  ): Promise<AxiosResponse<any, any>> {
+  async retrieveStockValues(stockId?: string): Promise<AxiosResponse<any>> {
     return this.sendRequest(`/stock_availables/` + stockId + this.endUrl);
   }
 
   async retrieveCombinationValues(
     combinationId?: string
-  ): Promise<AxiosResponse<any, any>> {
+  ): Promise<AxiosResponse<any>> {
     return this.sendRequest(`/combinations/` + combinationId + this.endUrl);
   }
 
-  async retrieveOption(
-    optionId?: string
-  ): Promise<AxiosResponse<any, any>> {
+  async retrieveOption(optionId?: string): Promise<AxiosResponse<any>> {
     return this.sendRequest(`/product_options/` + optionId + this.endUrl);
   }
 
-  async retrieveCategory(
-    categoryID?: string
-  ): Promise<AxiosResponse<any, any>> {
+  async retrieveCategory(categoryID?: string): Promise<AxiosResponse<any>> {
     return this.sendRequest(`/categories/` + categoryID + this.endUrl);
   }
 
@@ -272,7 +273,7 @@ class PrestashopClientService extends TransactionBaseService {
     path: string,
     method: string = "GET",
     data?: Record<string, any>
-  ): Promise<AxiosResponse<any, any>> {
+  ): Promise<AxiosResponse<any>> {
     const url = `${this.apiBaseUrl_}${path}`;
     const exists = await urlExists(url);
     if (exists) {

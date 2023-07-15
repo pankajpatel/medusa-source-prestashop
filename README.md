@@ -16,7 +16,6 @@ This plugin imports Prestashop categories and products into Medusa. It creates c
 
 ### Limitations
 
-
 ## Prerequisites
 
 ### Medusa Setup
@@ -31,7 +30,6 @@ Go in the PrestaShop back office, open the “Web service” page under the “A
 
 Generate a key and copy it as you'll need them for the plugin's options.
 
-
 You need to give at least the integration the access to the following resources:
 
 - products
@@ -43,7 +41,6 @@ You need to give at least the integration the access to the following resources:
 - images
 
 We recommend enable all the resources.
-
 
 ## Installing Plugin
 
@@ -66,6 +63,7 @@ const plugins = [
     options: {
       prestashop_url: '<YOUR_PRESTASHOP_URL>', // example 'https://prestashopstore.com/api',
       consumer_key: '<YOUR_CONSUMER_KEY>' // example 'FDSFJKLJFASDKLFJAJLKJFDS'
+      additionalParams: {}
     },
   },
 ];
@@ -73,11 +71,10 @@ const plugins = [
 
 ### Options
 
-| Name | Description | Required | Default Value|
--------|-------------|----------|--------------|
-| `prestashop_url` | The URL of your Medusa server. It should end with a /api. | true | |
-| `consumer_key` | The Consumer Key of the integration. | true | |
-
+| Name             | Description                                               | Required | Default Value |
+| ---------------- | --------------------------------------------------------- | -------- | ------------- |
+| `prestashop_url` | The URL of your Medusa server. It should end with a /api. | true     |               |
+| `consumer_key`   | The Consumer Key of the integration.                      | true     |               |
 
 ## Use the Plugin
 
@@ -97,9 +94,9 @@ You can trigger the import by creating a new batch job using the Create Batch Jo
 
 ```json
 {
-    "type": "import-prestashop",
-    "context": { },
-    "dry_run": false
+  "type": "import-prestashop",
+  "context": {},
+  "dry_run": false
 }
 ```
 
