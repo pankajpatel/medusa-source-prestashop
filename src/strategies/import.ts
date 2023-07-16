@@ -134,11 +134,12 @@ class ImportStrategy extends AbstractBatchJobStrategy {
       const productData = await this.prestashopClientService_.retrieveProduct(
         product.id
       );
+      if (productData) {
+        productData.data.product.images =
+          await this.prestashopClientService_.retrieveImages(product.id);
 
-      productData.data.product.images =
-        await this.prestashopClientService_.retrieveImages(product.id);
-
-      await this.prestashopProductService_.create(productData);
+        await this.prestashopProductService_.create(productData);
+      }
     }
 
     // Not necessary because there is no way to request Simple Products or Products with combinations. Just above retrieve all
