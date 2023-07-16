@@ -115,10 +115,11 @@ class PrestashopClientService extends TransactionBaseService {
         removeNSPrefix: true,
       };
       const parser = new XMLParser(options);
+      let imagesTemp = [];
+
+      if (!imagesId?.data) return imagesTemp;
 
       let images = await parser.parse(imagesId.data);
-
-      let imagesTemp = [];
 
       if (images.prestashop.image.declination.length) {
         images.prestashop.image.declination.forEach((element) => {
