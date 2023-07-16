@@ -32,7 +32,7 @@ class PrestashopCategoryService extends TransactionBaseService {
       //check if a collection exists for the category
       const existingCollection = await this.productCollectionService_
         .withTransaction(manager)
-        .retrieveByHandle(this.getHandle(category.data.category))
+        .retrieveByHandle(this.getHandle(category.data.categories?.[0]))
         .catch(() => undefined);
 
       if (existingCollection) {
@@ -40,7 +40,9 @@ class PrestashopCategoryService extends TransactionBaseService {
       }
 
       //create collection
-      const collectionData = this.normalizeCollection(category.data.category);
+      const collectionData = this.normalizeCollection(
+        category.data.categories?.[0]
+      );
       await this.productCollectionService_
         .withTransaction(manager)
         .create(collectionData);
@@ -52,7 +54,9 @@ class PrestashopCategoryService extends TransactionBaseService {
     existingCollection: ProductCollection
   ): Promise<void> {
     return this.atomicPhase_(async (manager) => {
-      const collectionData = this.normalizeCollection(category.data.category);
+      const collectionData = this.normalizeCollection(
+        category.data.categories?.[0]
+      );
 
       const update = {};
 
