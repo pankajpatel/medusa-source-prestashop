@@ -852,7 +852,7 @@ class PrestashopProductService extends TransactionBaseService {
 
       // images:
       // product.images?.map(
-      //   (img) => img.href + "/&ws_key=FZQX58LATQZGXAEVUTU4PMSNVT19QASS"
+      //   (img) => img.href + "/&ws_key=xxxxxxxx"
       // ) || [],
 
       // // thumbnail: product.media_gallery_entries?.find((img) => img.types.includes('thumbnail'))?.url,

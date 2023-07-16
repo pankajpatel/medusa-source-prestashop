@@ -34,7 +34,7 @@ class PrestashopClientService extends TransactionBaseService {
     this.options_ = options;
     this.apiBaseUrl_ = `${options.prestashop_url}`;
 
-    // https://farmaciapaseo51.com/api/products/1360/&ws_key=FZQX58LATQZGXAEVUTU4PMSNVT19QASS&output_format=JSON
+    // https://farmaciapaseo51.com/api/products/1360/&ws_key=xxxxxxxx&output_format=JSON
 
     this.client_ = axios.create({
       headers: {
@@ -233,7 +233,7 @@ class PrestashopClientService extends TransactionBaseService {
       );
     });
   }
-  //https://farmaciapaseo51.com/api/products/1360/&ws_key=FZQX58LATQZGXAEVUTU4PMSNVT19QASS&output_format=JSON
+  //https://farmaciapaseo51.com/api/products/1360/&ws_key=xxxxxxxx&output_format=JSON
   async retrieveCategories(
     lastUpdatedTime?: string
   ): Promise<AxiosResponse<any>> {
