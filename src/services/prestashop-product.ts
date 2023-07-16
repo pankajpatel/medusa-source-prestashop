@@ -882,7 +882,7 @@ class PrestashopProductService extends TransactionBaseService {
       metadata: {
         prestashop_id: product.data.product.id,
         reference: product.data.product.reference,
-        manufacter_name: product.data.product.manufacturer_name,
+        manufacturer_name: product.data.product.manufacturer_name,
         date_upd: product.data.product.date_upd,
         meta_keywords: product.data.product.meta_keywords,
       },
