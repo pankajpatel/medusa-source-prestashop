@@ -230,14 +230,14 @@ class PrestashopProductService extends TransactionBaseService {
             }
           }
 
-          if (stockValue.data.stock_available.out_of_stock == 0) {
+          if (stockValue.out_of_stock == 0) {
             combinationValues.data.combination.allow_backorder = false;
           } else {
             combinationValues.data.combination.allow_backorder = true;
           }
 
           combinationValues.data.combination.inventory_quantity = parseInt(
-            stockValue.data.stock_available.quantity
+            stockValue.quantity
           );
 
           const variantData = await this.normalizeVariant(
@@ -263,15 +263,13 @@ class PrestashopProductService extends TransactionBaseService {
         // }
       } else {
         //insert a default variant for a simple product
-        if (stockValue.data.stock_available.out_of_stock == 0) {
+        if (stockValue.out_of_stock == 0) {
           theProduct.allow_backorder = false;
         } else {
           theProduct.allow_backorder = true;
         }
 
-        theProduct.inventory_quantity = parseInt(
-          stockValue.data.stock_available.quantity
-        );
+        theProduct.inventory_quantity = parseInt(stockValue.quantity);
 
         const variantData = this.normalizeVariant(theProduct, []);
 
@@ -520,10 +518,10 @@ class PrestashopProductService extends TransactionBaseService {
             }
 
             combinationValues.data.combination.inventory_quantity = parseInt(
-              stockValue.data.stock_available.quantity
+              stockValue.quantity
             );
 
-            if (stockValue.data.stock_available.out_of_stock == 0) {
+            if (stockValue.out_of_stock == 0) {
               combinationValues.data.combination.allow_backorder = false;
             } else {
               combinationValues.data.combination.allow_backorder = true;
@@ -591,14 +589,14 @@ class PrestashopProductService extends TransactionBaseService {
               }
             }
 
-            if (stockValue.data.stock_available.out_of_stock == 0) {
+            if (stockValue.out_of_stock == 0) {
               combinationValues.data.combination.allow_backorder = false;
             } else {
               combinationValues.data.combination.allow_backorder = true;
             }
 
             combinationValues.data.combination.inventory_quantity = parseInt(
-              stockValue.data.stock_available.quantity
+              stockValue.quantity
             );
 
             const variantData = await this.normalizeVariant(
@@ -634,15 +632,13 @@ class PrestashopProductService extends TransactionBaseService {
         // }
       } else {
         //insert a default variant for a simple product
-        if (stockValue.data.stock_available.out_of_stock == 0) {
+        if (stockValue.out_of_stock == 0) {
           theProduct.allow_backorder = false;
         } else {
           theProduct.allow_backorder = true;
         }
 
-        theProduct.inventory_quantity = parseInt(
-          stockValue.data.stock_available.quantity
-        );
+        theProduct.inventory_quantity = parseInt(stockValue.quantity);
 
         const variantData = this.normalizeVariant(theProduct, []);
 

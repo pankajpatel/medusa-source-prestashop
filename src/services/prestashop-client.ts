@@ -1,12 +1,13 @@
 import { stringify } from "qs";
 import urlExists from "url-exists-deep";
 import { XMLParser, XMLBuilder, XMLValidator } from "fast-xml-parser";
-import axios, { AxiosInstance, AxiosResponse } from "axios";
+import axios, { AxiosInstance, AxiosResponse, Method } from "axios";
 
 import { EntityManager } from "typeorm";
 import { Logger } from "@medusajs/medusa/dist/types/global";
 import { MedusaError } from "medusa-core-utils";
 import { TransactionBaseService } from "@medusajs/medusa";
+import { Stock } from "../types";
 // import addOAuthInterceptor from 'axios-oauth-1.0a';
 
 type InjectedDependencies = {
@@ -251,8 +252,12 @@ class PrestashopClientService extends TransactionBaseService {
     return this.sendRequest(`/product_option_values/` + optionId + this.endUrl);
   }
 
-  async retrieveStockValues(stockId?: string): Promise<AxiosResponse<any>> {
-    return this.sendRequest(`/stock_availables/` + stockId + this.endUrl);
+  async retrieveStockValues(stockId?: string): Promise<Stock> {
+    return this.sendRequest<{
+      stock_availables: Array<Stock>;
+    }>(`/stock_availables/` + stockId + this.endUrl).then(
+      ({ data }) => data.stock_availables[0]
+    );
   }
 
   async retrieveCombinationValues(
@@ -269,11 +274,11 @@ class PrestashopClientService extends TransactionBaseService {
     return this.sendRequest(`/categories/` + categoryID + this.endUrl);
   }
 
-  async sendRequest(
+  async sendRequest<T = any>(
     path: string,
-    method: string = "GET",
+    method: Method = "GET",
     data?: Record<string, any>
-  ): Promise<AxiosResponse<any>> {
+  ): Promise<AxiosResponse<T>> {
     const url = `${this.apiBaseUrl_}${path}`;
     const exists = await urlExists(url);
     if (exists) {
