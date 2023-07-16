@@ -1,5 +1,5 @@
 import { stringify } from "qs";
-import { urlExistsDeep } from "url-exists-deep";
+import urlExists from "url-exists-deep";
 import { XMLParser, XMLBuilder, XMLValidator } from "fast-xml-parser";
 import axios, { AxiosInstance, AxiosResponse } from "axios";
 
