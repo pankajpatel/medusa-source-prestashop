@@ -829,7 +829,7 @@ class PrestashopProductService extends TransactionBaseService {
   }
 
   normalizeProduct(_product: Record<string, any>): any {
-    const product = _product.data.product;
+    const product = _product.data.products[0];
     product.meta_keywords = (product.meta_keywords || "")
       .split(",")
       .filter((element) => !(element === "" || element === " "));
