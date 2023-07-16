@@ -1,3 +1,6 @@
+import { stringify } from "qs";
+import { urlExistsDeep } from "url-exists-deep";
+import { XMLParser, XMLBuilder, XMLValidator } from "fast-xml-parser";
 import axios, { AxiosInstance, AxiosResponse } from "axios";
 
 import { EntityManager } from "typeorm";
@@ -5,10 +8,6 @@ import { Logger } from "@medusajs/medusa/dist/types/global";
 import { MedusaError } from "medusa-core-utils";
 import { TransactionBaseService } from "@medusajs/medusa";
 // import addOAuthInterceptor from 'axios-oauth-1.0a';
-
-import { XMLParser, XMLBuilder, XMLValidator } from "fast-xml-parser";
-import urlExists from "url-exists-deep";
-import { stringify } from "qs";
 
 type InjectedDependencies = {
   manager: EntityManager;

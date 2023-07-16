@@ -69,7 +69,6 @@ class PrestashopProductService extends TransactionBaseService {
   }
 
   async create(productData: any): Promise<void> {
-
     return this.atomicPhase_(async (manager) => {
       //check if product exists
       const existingProduct: Product = await this.productService_
@@ -80,23 +79,20 @@ class PrestashopProductService extends TransactionBaseService {
         .catch(() => undefined);
 
       if (existingProduct) {
-        //update the product instead
-        // return
+        // update the product instead
         return this.update(productData, existingProduct);
-      }
-      else {
+      } else {
         //check if it's a variant
 
-         // looking up by reference since Prestashop doesn't have SKU property.
-      // When is normalized the product is taking reference value and store as SKU.
-      // If the product exists this method is not called but the variant is checked if exists in update method so
-      // it will update it or create it.
+        // looking up by reference since Prestashop doesn't have SKU property.
+        // When is normalized the product is taking reference value and store as SKU.
+        // If the product exists this method is not called but the variant is checked if exists in update method so
+        // it will update it or create it.
 
         const existingVariant: Variant = await this.productVariantService_
           .withTransaction(manager)
           .retrieveBySKU(productData.data.product.reference)
-          .catch(() => undefined)
-        
+          .catch(() => undefined);
 
         if (existingVariant) {
           return this.updateVariant(productData, existingVariant);
@@ -107,11 +103,8 @@ class PrestashopProductService extends TransactionBaseService {
 
       await this.getCurrencies();
 
-
-
       const normalizedProduct = this.normalizeProduct(productData);
       normalizedProduct.profile_id = await this.getDefaultShippingProfile();
-
 
       try {
         if (productData.data.product.associations.categories) {
@@ -122,21 +115,18 @@ class PrestashopProductService extends TransactionBaseService {
           );
         }
       } catch (error) {
-        console.log(error)
-
+        console.log(error);
       }
 
-      
-
-
-      // retrieve stock 
+      // retrieve stock
 
       //out_of_stock 1 = permitted
-      //out_of_stock 0 = denied 
+      //out_of_stock 0 = denied
       //out_of_stock 2 = system behaivour
-      
-      let stockValue = await this.prestashopClientService_.retrieveStockValues(productData.data.product.associations.stock_availables[0].id); 
 
+      let stockValue = await this.prestashopClientService_.retrieveStockValues(
+        productData.data.product.associations.stock_availables[0].id
+      );
 
       // creates the options of the product
 
@@ -168,17 +158,14 @@ class PrestashopProductService extends TransactionBaseService {
       delete normalizedProduct.images;
 
       //create product
-      let product
+      let product;
       try {
         product = await this.productService_
-        .withTransaction(manager)
-        .create(normalizedProduct);
+          .withTransaction(manager)
+          .create(normalizedProduct);
       } catch (error) {
-        console.log(error)
+        console.log(error);
       }
-     
-
-
 
       if (productData.data.product.associations.combinations?.length >= 1) {
         //insert the configurable product's simple products as variants
@@ -235,30 +222,31 @@ class PrestashopProductService extends TransactionBaseService {
             });
           }
 
-          
-          for await (const stockAvailabe of productData.data.product.associations
-            .stock_availables) {
-              if (stockAvailabe.id_product_attribute == item.id){
-                stockValue = await this.prestashopClientService_.retrieveStockValues(stockAvailabe.id);
-              }
+          for await (const stockAvailabe of productData.data.product
+            .associations.stock_availables) {
+            if (stockAvailabe.id_product_attribute == item.id) {
+              stockValue =
+                await this.prestashopClientService_.retrieveStockValues(
+                  stockAvailabe.id
+                );
+            }
           }
 
-          if (stockValue.data.stock_available.out_of_stock == 0){
-            combinationValues.data.combination.allow_backorder = false
-          }else {
-            combinationValues.data.combination.allow_backorder = true
+          if (stockValue.data.stock_available.out_of_stock == 0) {
+            combinationValues.data.combination.allow_backorder = false;
+          } else {
+            combinationValues.data.combination.allow_backorder = true;
           }
-  
-        
 
+          combinationValues.data.combination.inventory_quantity = parseInt(
+            stockValue.data.stock_available.quantity
+          );
 
-          combinationValues.data.combination.inventory_quantity = parseInt(stockValue.data.stock_available.quantity)
-          
           const variantData = await this.normalizeVariant(
             combinationValues.data.combination,
             options
           );
-         
+
           try {
             await this.productVariantService_
               .withTransaction(manager)
@@ -277,21 +265,19 @@ class PrestashopProductService extends TransactionBaseService {
         // }
       } else {
         //insert a default variant for a simple product
-        if (stockValue.data.stock_available.out_of_stock == 0){
-          productData.data.product.allow_backorder = false
-        }else {
-          productData.data.product.allow_backorder = true
+        if (stockValue.data.stock_available.out_of_stock == 0) {
+          productData.data.product.allow_backorder = false;
+        } else {
+          productData.data.product.allow_backorder = true;
         }
 
-       
-
-
-        productData.data.product.inventory_quantity = parseInt(stockValue.data.stock_available.quantity)
+        productData.data.product.inventory_quantity = parseInt(
+          stockValue.data.stock_available.quantity
+        );
 
         const variantData = this.normalizeVariant(productData.data.product, []);
 
-        variantData.title = "Default"
-
+        variantData.title = "Default";
 
         try {
           await this.productVariantService_
@@ -331,8 +317,6 @@ class PrestashopProductService extends TransactionBaseService {
           images: productImagesFileService,
         });
       }
-
-
     });
   }
 
@@ -343,13 +327,10 @@ class PrestashopProductService extends TransactionBaseService {
       const optionsPrestashop = [];
       const optionsValuePrestashop = [];
 
-
       await this.getCurrencies();
 
       const normalizedProduct = this.normalizeProduct(productData);
       let productOptions = existingProduct.options;
-
-      
 
       if (productData.data.product.associations.categories) {
         await this.setCategory(
@@ -359,13 +340,9 @@ class PrestashopProductService extends TransactionBaseService {
         );
       }
 
-      let stockValue =
-      await this.prestashopClientService_.retrieveStockValues(productData.data.product.associations.stock_availables[0].id);
-
-
-
-     
-      
+      let stockValue = await this.prestashopClientService_.retrieveStockValues(
+        productData.data.product.associations.stock_availables[0].id
+      );
 
       productOptions = (
         await this.productService_
@@ -375,7 +352,6 @@ class PrestashopProductService extends TransactionBaseService {
           })
       ).options;
 
-     
       // var newOptions = [];
 
       // has options
@@ -386,13 +362,9 @@ class PrestashopProductService extends TransactionBaseService {
         for await (const item of productData.data.product.associations
           .product_option_values) {
           // productData.data.product.associations.product_option_values.map(async (item, index)=>{
-         
-          
 
           let optionValue =
             await this.prestashopClientService_.retrieveOptionValues(item.id);
-
-          
 
           optionsValuePrestashop.push(optionValue.data);
 
@@ -402,15 +374,11 @@ class PrestashopProductService extends TransactionBaseService {
               optionValue.data.product_option_value.id_attribute_group
           );
 
-         
-
           let option = await this.prestashopClientService_.retrieveOption(
             optionValue.data.product_option_value.id_attribute_group
           );
 
           optionsPrestashop.push(option.data);
-
-        
 
           if (!existingOption) {
             //add option
@@ -425,7 +393,6 @@ class PrestashopProductService extends TransactionBaseService {
           );
           delete normalizedOption.values;
 
-         
           await this.productService_
             .withTransaction(manager)
             .updateOption(
@@ -435,21 +402,15 @@ class PrestashopProductService extends TransactionBaseService {
             );
         }
 
-
-
-
         //check if there are options that should be deleted
         const optionsToDelete = productOptions.filter(
           (o) =>
             !optionsPrestashop.find((prestashop_option) => {
-              
               return (
                 prestashop_option.product_option.id == o.metadata.prestashop_id
               );
             })
         );
-
-      
 
         optionsToDelete.forEach(async (option) => {
           await this.productService_
@@ -465,8 +426,6 @@ class PrestashopProductService extends TransactionBaseService {
               relations: ["options", "options.values"],
             })
         ).options;
-
-       
       }
 
       // it would be neccesary that ImageRepo will store metadata image_id of prestashop in order to check if the image is already uploaded.
@@ -477,7 +436,6 @@ class PrestashopProductService extends TransactionBaseService {
 
       if (productData.data.product.associations.combinations?.length >= 1) {
         //attach values to the options
-       
 
         productOptions = productOptions.map((productOption) => {
           const productDataOption = optionsValuePrestashop.find(
@@ -486,39 +444,32 @@ class PrestashopProductService extends TransactionBaseService {
               o.product_option_value.id_attribute_group
           );
 
-          
-
           if (productDataOption) {
             productOption.values =
               this.normalizeOptionValues(productDataOption).values;
           }
 
-         
           return productOption;
         });
-
-
 
         // delete combinations
 
         existingProduct.variants.map(async (variant, key) => {
-            
           let existsVariant =
             await this.prestashopClientService_.retrieveCombinationValues(
               variant.metadata.prestashop_id
             );
-          if (existsVariant === null){
+          if (existsVariant === null) {
             try {
               await this.productVariantService_
                 .withTransaction(manager)
                 .delete(variant.id);
-              delete existingProduct.variants[key]
+              delete existingProduct.variants[key];
             } catch (error) {
               console.log(error);
             }
           }
         });
-       
 
         // //retrieve simple products as variants
         // const variants = await this.magentoClientService_
@@ -526,20 +477,18 @@ class PrestashopProductService extends TransactionBaseService {
 
         for await (const item of productData.data.product.associations
           .combinations) {
-          const existingVariant = existingProduct.variants.find(async (variant) => {
-            return variant.metadata.prestashop_id + "" === item.id;
-          });
+          const existingVariant = existingProduct.variants.find(
+            async (variant) => {
+              return variant.metadata.prestashop_id + "" === item.id;
+            }
+          );
 
-          
-          
           if (existingVariant != null) {
-
             let combinationValues =
               await this.prestashopClientService_.retrieveCombinationValues(
                 item.id
               );
 
-          
             let options = [];
             for await (const optionValueId of combinationValues.data.combination
               .associations.product_option_values) {
@@ -547,7 +496,7 @@ class PrestashopProductService extends TransactionBaseService {
                 await this.prestashopClientService_.retrieveOptionValues(
                   optionValueId.id
                 );
-                productOptions.map((element) => {
+              productOptions.map((element) => {
                 if (
                   element.metadata.prestashop_id ==
                   optionValues.data.product_option_value.id_attribute_group
@@ -564,25 +513,25 @@ class PrestashopProductService extends TransactionBaseService {
               });
             }
 
-            for await (const stockAvailabe of productData.data.product.associations
-              .stock_availables) {
-                if (stockAvailabe.id_product_attribute == item.id){
-                  stockValue = await this.prestashopClientService_.retrieveStockValues(stockAvailabe.id);
-                }
+            for await (const stockAvailabe of productData.data.product
+              .associations.stock_availables) {
+              if (stockAvailabe.id_product_attribute == item.id) {
+                stockValue =
+                  await this.prestashopClientService_.retrieveStockValues(
+                    stockAvailabe.id
+                  );
+              }
             }
 
-            combinationValues.data.combination.inventory_quantity = parseInt(stockValue.data.stock_available.quantity)
-  
-            if (stockValue.data.stock_available.out_of_stock == 0){
-              combinationValues.data.combination.allow_backorder = false
-            }else {
-              combinationValues.data.combination.allow_backorder = true
-            }
-    
+            combinationValues.data.combination.inventory_quantity = parseInt(
+              stockValue.data.stock_available.quantity
+            );
 
-          
-  
-          
+            if (stockValue.data.stock_available.out_of_stock == 0) {
+              combinationValues.data.combination.allow_backorder = false;
+            } else {
+              combinationValues.data.combination.allow_backorder = true;
+            }
 
             const variantData = await this.normalizeVariant(
               combinationValues.data.combination,
@@ -591,15 +540,13 @@ class PrestashopProductService extends TransactionBaseService {
             );
 
             variantData.options.forEach((element, key) => {
-              if (Object.is( variantData.options.length - 1, key)) {
-                variantData.title = element.value
-               }else{
-                variantData.title = element.value + " - "
-  
-               }
-             });
+              if (Object.is(variantData.options.length - 1, key)) {
+                variantData.title = element.value;
+              } else {
+                variantData.title = element.value + " - ";
+              }
+            });
 
-          
             try {
               await this.productVariantService_
                 .withTransaction(manager)
@@ -607,16 +554,12 @@ class PrestashopProductService extends TransactionBaseService {
             } catch (error) {
               console.log(error);
             }
-          }else{
-            
-           
-
-
+          } else {
             let combinationValues =
               await this.prestashopClientService_.retrieveCombinationValues(
                 item.id
               );
-         
+
             let options = [];
             for await (const optionValueId of combinationValues.data.combination
               .associations.product_option_values) {
@@ -624,9 +567,8 @@ class PrestashopProductService extends TransactionBaseService {
                 await this.prestashopClientService_.retrieveOptionValues(
                   optionValueId.id
                 );
-               
-                productOptions.map((element) => {
-                 
+
+              productOptions.map((element) => {
                 if (
                   element.metadata.prestashop_id ==
                   optionValues.data.product_option_value.id_attribute_group
@@ -642,27 +584,26 @@ class PrestashopProductService extends TransactionBaseService {
                 }
               });
             }
-            
-           
 
-            for await (const stockAvailabe of productData.data.product.associations
-              .stock_availables) {
-                if (stockAvailabe.id_product_attribute == item.id){
-                  stockValue = await this.prestashopClientService_.retrieveStockValues(stockAvailabe.id);
-                }
+            for await (const stockAvailabe of productData.data.product
+              .associations.stock_availables) {
+              if (stockAvailabe.id_product_attribute == item.id) {
+                stockValue =
+                  await this.prestashopClientService_.retrieveStockValues(
+                    stockAvailabe.id
+                  );
+              }
             }
-  
-            if (stockValue.data.stock_available.out_of_stock == 0){
-              combinationValues.data.combination.allow_backorder = false
-            }else {
-              combinationValues.data.combination.allow_backorder = true
-            }
-    
-           
-  
-           
-            combinationValues.data.combination.inventory_quantity = parseInt(stockValue.data.stock_available.quantity)
 
+            if (stockValue.data.stock_available.out_of_stock == 0) {
+              combinationValues.data.combination.allow_backorder = false;
+            } else {
+              combinationValues.data.combination.allow_backorder = true;
+            }
+
+            combinationValues.data.combination.inventory_quantity = parseInt(
+              stockValue.data.stock_available.quantity
+            );
 
             const variantData = await this.normalizeVariant(
               combinationValues.data.combination,
@@ -670,15 +611,14 @@ class PrestashopProductService extends TransactionBaseService {
               productData.data.product.price
             );
 
-           variantData.options.forEach((element, key) => {
-            if (Object.is( variantData.options.length - 1, key)) {
-              variantData.title = element.value
-             }else{
-              variantData.title = element.value + " - "
+            variantData.options.forEach((element, key) => {
+              if (Object.is(variantData.options.length - 1, key)) {
+                variantData.title = element.value;
+              } else {
+                variantData.title = element.value + " - ";
+              }
+            });
 
-             }
-           });
-         
             try {
               await this.productVariantService_
                 .withTransaction(manager)
@@ -696,36 +636,27 @@ class PrestashopProductService extends TransactionBaseService {
         //     productImages.push(...v.media_gallery_entries.map((entry) => entry.url));
         //   }
         // }
-
       } else {
-
-        
         //insert a default variant for a simple product
-        if (stockValue.data.stock_available.out_of_stock == 0){
-          productData.data.product.allow_backorder = false
-        }else {
-          productData.data.product.allow_backorder = true
+        if (stockValue.data.stock_available.out_of_stock == 0) {
+          productData.data.product.allow_backorder = false;
+        } else {
+          productData.data.product.allow_backorder = true;
         }
 
-
-     
-
-        productData.data.product.inventory_quantity = parseInt(stockValue.data.stock_available.quantity)
-
+        productData.data.product.inventory_quantity = parseInt(
+          stockValue.data.stock_available.quantity
+        );
 
         const variantData = this.normalizeVariant(productData.data.product, []);
 
-        
-
-        variantData.title = "Default"
-
-       
+        variantData.title = "Default";
 
         // checks if there is just one variant so it's a simple product.
         // if it's equal 1 it means that is the same variant so it will update it
-        // otherwise it will create it. 
+        // otherwise it will create it.
 
-        if (existingProduct.variants.length == 1){
+        if (existingProduct.variants.length == 1) {
           try {
             await this.productVariantService_
               .withTransaction(manager)
@@ -733,7 +664,7 @@ class PrestashopProductService extends TransactionBaseService {
           } catch (error) {
             console.log(error);
           }
-        }else{
+        } else {
           try {
             await this.productVariantService_
               .withTransaction(manager)
@@ -742,16 +673,11 @@ class PrestashopProductService extends TransactionBaseService {
             console.log(error);
           }
         }
-        
       }
-      
-      
 
       productImages = [...new Set(productImages)];
 
       let productImagesFileService = [];
-
-    
 
       if (productData.data.product.images != undefined) {
         for await (const element of productImages) {
@@ -774,11 +700,12 @@ class PrestashopProductService extends TransactionBaseService {
           productImagesFileService.push(response.url);
         }
 
-        await this.productService_.withTransaction(manager).update(existingProduct.id, {
-          images: productImagesFileService,
-        });
+        await this.productService_
+          .withTransaction(manager)
+          .update(existingProduct.id, {
+            images: productImagesFileService,
+          });
       }
-
 
       //update product
       delete normalizedProduct.options;
@@ -807,11 +734,13 @@ class PrestashopProductService extends TransactionBaseService {
     existingVariant: Variant
   ): Promise<void> {
     return this.atomicPhase_(async (manager: EntityManager) => {
-
       //retrieve store's currencies
       await this.getCurrencies();
 
-      const variantData = await this.normalizeVariant(productData.data.product, []);
+      const variantData = await this.normalizeVariant(
+        productData.data.product,
+        []
+      );
       delete variantData.options;
       delete variantData.prestashop_id;
 
@@ -904,15 +833,16 @@ class PrestashopProductService extends TransactionBaseService {
   }
 
   normalizeProduct(product: Record<string, any>): any {
-   
-    product.data.product.meta_keywords  = product.data.product.meta_keywords.split(',')
-    product.data.product.meta_keywords = product.data.product.meta_keywords.filter(element => {
-      if(element === "" || element === " "){
-        return false;
-      }else{
-        return true;
-      }
-    })
+    product.data.product.meta_keywords =
+      product.data.product.meta_keywords.split(",");
+    product.data.product.meta_keywords =
+      product.data.product.meta_keywords.filter((element) => {
+        if (element === "" || element === " ") {
+          return false;
+        } else {
+          return true;
+        }
+      });
 
     return {
       title: product.data.product.name,
@@ -921,10 +851,10 @@ class PrestashopProductService extends TransactionBaseService {
       is_giftcard: false,
       discountable: true,
       description: product.data.product.description,
-      subtitle:  product.data.product.description_short,
-      weight:  parseFloat(product.data.product.weight),
-      height:  parseFloat(product.data.product.height),
-      lenght:  parseFloat(product.data.product.depth),
+      subtitle: product.data.product.description_short,
+      weight: parseFloat(product.data.product.weight),
+      height: parseFloat(product.data.product.height),
+      lenght: parseFloat(product.data.product.depth),
       width: parseFloat(product.data.product.width),
       // type: {
       //   value: product.type_id
@@ -934,16 +864,13 @@ class PrestashopProductService extends TransactionBaseService {
         product.data.product.active == 1
           ? ProductStatus.PUBLISHED
           : ProductStatus.DRAFT,
-      images:
-        product.data.product.images?.map(
-          (img) => img.href
-        ) || [],
+      images: product.data.product.images?.map((img) => img.href) || [],
 
-        // images:
-        // product.data.product.images?.map(
-        //   (img) => img.href + "/&ws_key=FZQX58LATQZGXAEVUTU4PMSNVT19QASS"
-        // ) || [],
-      
+      // images:
+      // product.data.product.images?.map(
+      //   (img) => img.href + "/&ws_key=FZQX58LATQZGXAEVUTU4PMSNVT19QASS"
+      // ) || [],
+
       // // thumbnail: product.media_gallery_entries?.find((img) => img.types.includes('thumbnail'))?.url,
       options: [],
       // // collection_id: product.data.product.associations.categories[0].id
@@ -956,7 +883,7 @@ class PrestashopProductService extends TransactionBaseService {
         reference: product.data.product.reference,
         manufacter_name: product.data.product.manufacturer_name,
         date_upd: product.data.product.date_upd,
-        meta_keywords:  product.data.product.meta_keywords
+        meta_keywords: product.data.product.meta_keywords,
       },
     };
   }
@@ -966,29 +893,32 @@ class PrestashopProductService extends TransactionBaseService {
     options?: Record<string, any>[],
     itemPrice?: any
   ): Record<string, any> {
-    let total = parseFloat(itemPrice) + parseFloat(variant.price)
+    let total = parseFloat(itemPrice) + parseFloat(variant.price);
     return {
       title: variant.id,
       prices: this.currencies.map((currency) => ({
-        amount: itemPrice != undefined ? this.parsePrice(total) : this.parsePrice(variant.price),
+        amount:
+          itemPrice != undefined
+            ? this.parsePrice(total)
+            : this.parsePrice(variant.price),
         currency_code: currency,
       })),
       sku: variant.reference === "" ? null : variant.reference,
       barcode: variant.ean13 === "" ? null : variant.ean13,
       ean: variant.ean13 === "" ? null : variant.ean13,
       upc: variant.upc === "" ? null : variant.upc,
-      inventory_quantity: variant.inventory_quantity,   
+      inventory_quantity: variant.inventory_quantity,
       allow_backorder: variant.allow_backorder,
       // dependes_on_stock is deprecated in Prestashop  https://devdocs.prestashop-project.org/1.7/modules/core-updates/1.7.8/
-      // The way it works is if the quantity of inventory is greater than 1, manage inventory is enabled      
-      manage_inventory: variant.inventory_quantity > 0 ? true : false, 
+      // The way it works is if the quantity of inventory is greater than 1, manage inventory is enabled
+      manage_inventory: variant.inventory_quantity > 0 ? true : false,
       weight: ~~variant.weight || 0,
       options: options,
       metadata: {
         prestashop_id: variant.id,
         isbn: variant.isbn,
         supplier_reference: variant.supplier_reference,
-        location: variant.location
+        location: variant.location,
       },
     };
   }
