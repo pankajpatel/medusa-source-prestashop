@@ -135,7 +135,7 @@ class ImportStrategy extends AbstractBatchJobStrategy {
         product.id
       );
       if (productData) {
-        productData.data.product.images =
+        productData.data.products[0].images =
           await this.prestashopClientService_.retrieveImages(product.id);
 
         await this.prestashopProductService_.create(productData);
