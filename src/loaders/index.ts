@@ -9,7 +9,6 @@ export default async (container, options) => {
       type: "import-prestashop",
       context: { options },
       dry_run: false,
-      created_by: "",
     });
   } catch (err) {
     console.log(err);
