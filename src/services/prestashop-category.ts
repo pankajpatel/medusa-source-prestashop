@@ -1,11 +1,13 @@
-import PrestashopClientService from "medusa-source-prestashop/src/services/prestashop-client";
+import PrestashopClientService from "./prestashop-client";
 import {
   ProductCollection,
   ProductCollectionService,
   TransactionBaseService,
 } from "@medusajs/medusa";
 
-import { EntityManager } from "typeorm";
+import { EntityManager } from "@medusajs/typeorm";
+import { PluginOptions } from "../types";
+import slugify from "slugify";
 
 type InjectedDependencies = {
   prestashopClientService: PrestashopClientService;
@@ -15,14 +17,15 @@ type InjectedDependencies = {
 
 class PrestashopCategoryService extends TransactionBaseService {
   protected manager_: EntityManager;
+  protected options_: PluginOptions;
   protected transactionManager_: EntityManager;
   protected prestashopClientService_: PrestashopClientService;
   protected productCollectionService_: ProductCollectionService;
 
-  constructor(container: InjectedDependencies, options) {
+  constructor(container: InjectedDependencies, options: PluginOptions) {
     super(container);
-
     this.manager_ = container.manager;
+    this.options_ = options;
     this.prestashopClientService_ = container.prestashopClientService;
     this.productCollectionService_ = container.productCollectionService;
   }
@@ -96,8 +99,10 @@ class PrestashopCategoryService extends TransactionBaseService {
     };
   }
 
-  getHandle(category: any): string {
-    return category.link_rewrite || "";
+  getHandle(category: { name: string; link_rewrite?: string }) {
+    return this.options_.generateNewHandles || !category.link_rewrite
+      ? slugify(category.name)
+      : category.link_rewrite;
   }
 }
 

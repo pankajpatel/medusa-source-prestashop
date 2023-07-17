@@ -7,7 +7,7 @@ import { EntityManager } from "typeorm";
 import { Logger } from "@medusajs/medusa/dist/types/global";
 import { MedusaError } from "medusa-core-utils";
 import { TransactionBaseService } from "@medusajs/medusa";
-import { Stock } from "../types";
+import { PluginOptions, SearchCriteria, Stock } from "../types";
 // import addOAuthInterceptor from 'axios-oauth-1.0a';
 
 type InjectedDependencies = {
@@ -84,17 +84,23 @@ class PrestashopClientService extends TransactionBaseService {
   }
 
   getPSReqParameters(format: "json" | "xml" = "json") {
-    const params = {
+    const params: {
+      output_format?: "JSON";
+      ws_key: PluginOptions["consumer_key"];
+    } = {
       ...(this.options_.additionalParams || {}),
       ws_key: this.options_.consumer_key,
     };
 
-    format === "json" && (params.output_format = format.toUpperCase());
+    format === "json" &&
+      (params.output_format = format.toUpperCase() as "JSON");
     return params;
   }
 
-  async retrieveProducts(): Promise<Record<string, any>[]> {
-    return this.sendRequest(`/products/` + this.endUrl);
+  async retrieveProducts(): Promise<AxiosResponse<Array<Record<string, any>>>> {
+    return this.sendRequest<Array<Record<string, any>>>(
+      `/products/` + this.endUrl
+    );
   }
 
   async downloadFile(url2): Promise<any> {
@@ -135,8 +141,12 @@ class PrestashopClientService extends TransactionBaseService {
     }
   }
 
-  async retrieveProduct(productId?: string): Promise<Record<string, any>[]> {
-    return this.sendRequest(`/products/` + productId + this.endUrl);
+  async retrieveProduct(
+    productId?: string
+  ): Promise<AxiosResponse<Record<string, any>[]>> {
+    return this.sendRequest<Record<string, any>[]>(
+      `/products/` + productId + this.endUrl
+    );
   }
 
   async retrieveProductImages(
@@ -221,7 +231,7 @@ class PrestashopClientService extends TransactionBaseService {
   ): Promise<Record<string, any>[]> {
     return this.retrieveProducts().then(async (products) => {
       return await Promise.all(
-        products.map(async (variant) => {
+        products.data.map(async (variant) => {
           //get stock item of that variant
           const { data } = await this.retrieveInventoryData(variant.sku);
 

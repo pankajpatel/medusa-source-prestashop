@@ -12,14 +12,11 @@ import {
   TransactionBaseService,
   Variant,
 } from "@medusajs/medusa";
-import PrestashopClientService, {
-  PluginOptions,
-} from "medusa-source-prestashop/src/services/prestashop-client";
-import fs from "fs";
-const http = require("https");
-const axios = require("axios");
-
-import { EntityManager } from "typeorm";
+import PrestashopClientService from "./prestashop-client";
+import { writeFileSync } from "fs";
+import { EntityManager } from "@medusajs/typeorm";
+import slugify from "slugify";
+import { PluginOptions } from "../types";
 
 type InjectedDependencies = {
   productService: ProductService;
@@ -66,6 +63,12 @@ class PrestashopProductService extends TransactionBaseService {
 
     this.currencies = [];
     this.defaultShippingProfileId = "";
+  }
+
+  getHandle(product: { name: string; link_rewrite?: string }) {
+    return this.options_.generateNewHandles || !product.link_rewrite
+      ? slugify(product.name)
+      : product.link_rewrite;
   }
 
   async create(productData: any): Promise<void> {
@@ -293,15 +296,17 @@ class PrestashopProductService extends TransactionBaseService {
           // const res = await this.downloadFile(element);
           const res = await this.prestashopClientService_.downloadFile(element);
 
-          await fs.writeFileSync("./uploads/tempImage.jpg", res);
+          await writeFileSync("./uploads/tempImage.jpg", res);
+
+          const handle = this.getHandle(theProduct);
 
           let response = await this.fileService_.upload({
             fieldname: "files",
-            originalname: theProduct.link_rewrite + ".jpeg",
+            originalname: `${handle}.jpeg`,
             encoding: "7bit",
             mimetype: "image/jpeg",
             destination: "uploads/",
-            filename: theProduct.link_rewrite + ".jpeg",
+            filename: `${handle}.jpeg`,
             path: "./uploads/tempImage.jpg",
             size: 52370,
           });
@@ -676,15 +681,17 @@ class PrestashopProductService extends TransactionBaseService {
           // const res = await this.downloadFile(element);
           const res = await this.prestashopClientService_.downloadFile(element);
 
-          await fs.writeFileSync("./uploads/tempImage.jpg", res);
+          await writeFileSync("./uploads/tempImage.jpg", res);
+
+          const handle = this.getHandle(theProduct);
 
           let response = await this.fileService_.upload({
             fieldname: "files",
-            originalname: theProduct.link_rewrite + ".jpeg",
+            originalname: `${handle}.jpeg`,
             encoding: "7bit",
             mimetype: "image/jpeg",
             destination: "uploads/",
-            filename: theProduct.link_rewrite + ".jpeg",
+            filename: `${handle}.jpeg`,
             path: "./uploads/tempImage.jpg",
             size: 52370,
           });
@@ -833,7 +840,7 @@ class PrestashopProductService extends TransactionBaseService {
     return {
       title: product.name,
       // profile_id: "sp_01GKH5C2YCXY22RA9NP28DFR6D",
-      handle: product.link_rewrite,
+      handle: this.getHandle(product),
       is_giftcard: false,
       discountable: true,
       description: product.description,

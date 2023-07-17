@@ -9,3 +9,19 @@ export type Stock = {
   out_of_stock: string;
   location: string;
 };
+
+export interface PluginOptions {
+  prestashop_url: string;
+  consumer_key: string;
+  generateNewHandles?: boolean;
+  additionalParams?: Record<string, any>;
+}
+
+export type SearchCriteria = {
+  currentPage: string;
+  filterGroups?: Array<
+    Array<{ field: string; value: string; condition_type: string }>
+  >;
+  storeId: string | number;
+  currencyCode: string;
+};

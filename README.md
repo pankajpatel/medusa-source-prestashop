@@ -12,7 +12,7 @@
 
 ## Description
 
-This plugin imports Prestashop categories and products into Medusa. It creates categories and products that don't exist, and updates those that have been imported previously.
+This plugin imports Prestashop categories and products into Medusa. It creates categories and products that don't exist and updates those that have been imported previously.
 
 ### Limitations
 
@@ -26,11 +26,11 @@ Furthermore, the Medusa server should have [PostgreSQL](https://docs.medusajs.co
 
 ### Prestashop Setup
 
-Go in the PrestaShop back office, open the “Web service” page under the “Advanced Parameters” menu, and then choose “Yes” for the “Enable PrestaShop Webservice” option.
+Go to the PrestaShop back office, open the “Web service” page under the “Advanced Parameters” menu, and then choose “Yes” for the “Enable PrestaShop Webservice” option.
 
 Generate a key and copy it as you'll need them for the plugin's options.
 
-You need to give at least the integration the access to the following resources:
+You need to give at least the integration access to the following resources:
 
 - products
 - product_options
@@ -40,7 +40,7 @@ You need to give at least the integration the access to the following resources:
 - stock_availables
 - images
 
-We recommend enable all the resources.
+We recommend enabling all the resources.
 
 ## Installing Plugin
 
@@ -64,6 +64,7 @@ const plugins = [
       prestashop_url: '<YOUR_PRESTASHOP_URL>', // example 'https://prestashopstore.com/api',
       consumer_key: '<YOUR_CONSUMER_KEY>' // example 'FDSFJKLJFASDKLFJAJLKJFDS'
       additionalParams: {}
+      generateNewHandles: boolean
     },
   },
 ];
@@ -71,10 +72,12 @@ const plugins = [
 
 ### Options
 
-| Name             | Description                                               | Required | Default Value |
-| ---------------- | --------------------------------------------------------- | -------- | ------------- |
-| `prestashop_url` | The URL of your Medusa server. It should end with a /api. | true     |               |
-| `consumer_key`   | The Consumer Key of the integration.                      | true     |               |
+| Name                 | Description                                                                        | Required | Default Value |
+| -------------------- | ---------------------------------------------------------------------------------- | -------- | ------------- |
+| `prestashop_url`     | The URL of your Medusa server. It should end with a /api.                          | true     |               |
+| `consumer_key`       | The Consumer Key of the integration.                                               | true     |               |
+| `generateNewHandles` | Should the importer generate new handles or use link_rewrite in prestashop product | false    | `false`       |
+| `additionalParams`   | Additional parameters to send when making Prestashop webservice request            | false    | `undefined`   |
 
 ## Use the Plugin
 

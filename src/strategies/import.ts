@@ -7,12 +7,13 @@ import {
   StoreService,
 } from "@medusajs/medusa";
 
-import { EntityManager } from "typeorm";
+import { EntityManager } from "@medusajs/typeorm";
 import { Logger } from "@medusajs/medusa/dist/types/global";
-import PrestashopCategoryService from "medusa-source-prestashop/src/services/prestashop-category";
-import PrestashopProductService from "medusa-source-prestashop/src/services/prestashop-product";
 
-import PrestashopClientService from "medusa-source-prestashop/src/services/prestashop-client";
+import PrestashopCategoryService from "../services/prestashop-category";
+import PrestashopProductService from "../services/prestashop-product";
+
+import PrestashopClientService from "../services/prestashop-client";
 
 type InjectedDependencies = {
   storeService: StoreService;
