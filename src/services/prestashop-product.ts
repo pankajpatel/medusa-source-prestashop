@@ -845,10 +845,10 @@ class PrestashopProductService extends TransactionBaseService {
       discountable: true,
       description: product.description,
       subtitle: product.description_short,
-      weight: Math.floor(+product.weight * 100),
-      height: Math.floor(+product.height),
-      length: Math.floor(+product.length),
-      width: Math.floor(+product.width),
+      weight: Math.floor(+(product.weight || 0) * 100),
+      height: Math.floor(+(product.height || 0)),
+      length: Math.floor(+(product.depth || 0)),
+      width: Math.floor(+(product.width || 0)),
       // type: {
       //   value: product.type_id
       // },
@@ -906,7 +906,7 @@ class PrestashopProductService extends TransactionBaseService {
       weight: Math.floor(+(variant.weight || 0) * 100),
       height: Math.floor(+(variant.height || 0)),
       width: Math.floor(+(variant.width || 0)),
-      length: Math.floor(+(variant.length || 0)),
+      length: Math.floor(+(variant.depth || 0)),
       options: options,
       metadata: {
         prestashop_id: variant.id,
