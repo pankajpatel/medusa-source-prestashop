@@ -67,7 +67,7 @@ class PrestashopProductService extends TransactionBaseService {
 
   getHandle(product: { name: string; link_rewrite?: string }) {
     return this.options_.generateNewHandles || !product.link_rewrite
-      ? slugify(product.name)
+      ? slugify(product.name).toLowerCase()
       : product.link_rewrite;
   }
 
@@ -845,10 +845,10 @@ class PrestashopProductService extends TransactionBaseService {
       discountable: true,
       description: product.description,
       subtitle: product.description_short,
-      weight: parseInt((+product.weight * 100).toString(), 10),
-      height: parseInt((+product.height).toString(), 10),
-      length: parseInt((+product.length).toString(), 10),
-      width: parseInt((+product.width).toString(), 10),
+      weight: Math.floor(+product.weight * 100),
+      height: Math.floor(+product.height),
+      length: Math.floor(+product.length),
+      width: Math.floor(+product.width),
       // type: {
       //   value: product.type_id
       // },
@@ -903,10 +903,10 @@ class PrestashopProductService extends TransactionBaseService {
       // dependes_on_stock is deprecated in Prestashop  https://devdocs.prestashop-project.org/1.7/modules/core-updates/1.7.8/
       // The way it works is if the quantity of inventory is greater than 1, manage inventory is enabled
       manage_inventory: variant.inventory_quantity > 0 ? true : false,
-      weight: parseInt((+(variant.weight || 0) * 100).toString(), 10),
-      height: parseInt((+(variant.height || 0) * 100).toString(), 10),
-      width: parseInt((+(variant.width || 0) * 100).toString(), 10),
-      length: parseInt((+(variant.length || 0) * 100).toString(), 10),
+      weight: Math.floor(+(variant.weight || 0) * 100),
+      height: Math.floor(+(variant.height || 0)),
+      width: Math.floor(+(variant.width || 0)),
+      length: Math.floor(+(variant.length || 0)),
       options: options,
       metadata: {
         prestashop_id: variant.id,
