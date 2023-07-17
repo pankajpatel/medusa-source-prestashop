@@ -1,9 +1,9 @@
 import { stringify } from "qs";
-import urlExists from "url-exists-deep";
+import urlExists from "url-exists-deep/dist";
 import { XMLParser, XMLBuilder, XMLValidator } from "fast-xml-parser";
 import axios, { AxiosInstance, AxiosResponse, Method } from "axios";
 
-import { EntityManager } from "typeorm";
+import { EntityManager } from "@medusajs/typeorm";
 import { Logger } from "@medusajs/medusa/dist/types/global";
 import { MedusaError } from "medusa-core-utils";
 import { TransactionBaseService } from "@medusajs/medusa";

@@ -403,7 +403,7 @@ class PrestashopProductService extends TransactionBaseService {
         }
 
         //check if there are options that should be deleted
-        const optionsToDelete = productOptions.filter(
+        const optionsToDelete = (productOptions || []).filter(
           (o) =>
             !optionsPrestashop.find((prestashop_option) => {
               return (
@@ -437,7 +437,7 @@ class PrestashopProductService extends TransactionBaseService {
       if (theProduct.associations.combinations?.length >= 1) {
         //attach values to the options
 
-        productOptions = productOptions.map((productOption) => {
+        productOptions = (productOptions || []).map((productOption) => {
           const productDataOption = optionsValuePrestashop.find(
             (o) =>
               productOption.metadata.prestashop_id ==
@@ -845,10 +845,10 @@ class PrestashopProductService extends TransactionBaseService {
       discountable: true,
       description: product.description,
       subtitle: product.description_short,
-      weight: parseFloat(product.weight),
-      height: parseFloat(product.height),
-      lenght: parseFloat(product.depth),
-      width: parseFloat(product.width),
+      weight: parseInt((+product.weight * 100).toString(), 10),
+      height: parseInt((+product.height).toString(), 10),
+      length: parseInt((+product.length).toString(), 10),
+      width: parseInt((+product.width).toString(), 10),
       // type: {
       //   value: product.type_id
       // },
@@ -862,9 +862,9 @@ class PrestashopProductService extends TransactionBaseService {
       //   (img) => img.href + "/&ws_key=xxxxxxxx"
       // ) || [],
 
-      // // thumbnail: product.media_gallery_entries?.find((img) => img.types.includes('thumbnail'))?.url,
+      // thumbnail: product.media_gallery_entries?.find((img) => img.types.includes('thumbnail'))?.url,
       options: [],
-      // // collection_id: product.associations.categories[0].id
+      // collection_id: product.associations.categories[0].id
       collection_id: null,
       // tags: product.meta_keywords.map((value) => ({
       //   value: value
@@ -903,7 +903,10 @@ class PrestashopProductService extends TransactionBaseService {
       // dependes_on_stock is deprecated in Prestashop  https://devdocs.prestashop-project.org/1.7/modules/core-updates/1.7.8/
       // The way it works is if the quantity of inventory is greater than 1, manage inventory is enabled
       manage_inventory: variant.inventory_quantity > 0 ? true : false,
-      weight: ~~variant.weight || 0,
+      weight: parseInt((+(variant.weight || 0) * 100).toString(), 10),
+      height: parseInt((+(variant.height || 0) * 100).toString(), 10),
+      width: parseInt((+(variant.width || 0) * 100).toString(), 10),
+      length: parseInt((+(variant.length || 0) * 100).toString(), 10),
       options: options,
       metadata: {
         prestashop_id: variant.id,

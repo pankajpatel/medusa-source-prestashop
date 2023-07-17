@@ -35,7 +35,7 @@ class PrestashopCategoryService extends TransactionBaseService {
       //check if a collection exists for the category
       const existingCollection = await this.productCollectionService_
         .withTransaction(manager)
-        .retrieveByHandle(this.getHandle(category.data.categories?.[0]))
+        .retrieveByHandle(category.data.categories?.[0]?.link_rewrite || "")
         .catch(() => undefined);
 
       if (existingCollection) {
