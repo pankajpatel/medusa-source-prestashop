@@ -85,30 +85,20 @@ class ImportStrategy extends AbstractBatchJobStrategy {
     this.logger_.info("Importing categories from Prestashop...");
     const lastUpdatedTime = await this.getBuildTime(store);
 
-    //retrieve categories
-    // const { data } = await this.prestashopClientService_.retrieveCategories(lastUpdatedTime);
-    var categories;
-    const getCategories = async () => {
-      categories = await this.prestashopClientService_.retrieveCategories(
-        lastUpdatedTime
-      );
-    };
+    const categories = await this.prestashopClientService_.retrieveCategories();
 
-    await getCategories();
-
-    // await categories.data.categories.map(async (category) => {
-    for await (let category of categories.data.categories) {
+    // await categories.map(async (category) => {
+    for await (let category of categories) {
       await this.prestashopCategoryService_.create(
-        await this.prestashopClientService_.retrieveCategory(category.id)
+        await this.prestashopClientService_.retrieveCategory(
+          category.id.toString()
+        )
       );
-      //  if (category.id == 11) {
-      //   break
-      //  }
     }
 
-    if (categories.data.categories.length) {
+    if (categories.length) {
       this.logger_.info(
-        `${categories.data.categories.length} categories have been imported or updated successfully.`
+        `${categories.length} categories have been imported or updated successfully.`
       );
     } else {
       this.logger_.info(`No categories have been imported or updated.`);
@@ -125,19 +115,20 @@ class ImportStrategy extends AbstractBatchJobStrategy {
     // for await (const id of optionsId.data.product_options) {
     //   console.log(id.id)
     //   let option = await this.prestashopClientService_.retrieveOption(id.id)
-    //   options.push(option.data.product_option)
+    //   options.push(option)
     // }
 
     // console.log("product has combinations")
     // console.log(options)
 
-    for (let product of products.data.products) {
+    for (let product of products) {
       const productData = await this.prestashopClientService_.retrieveProduct(
-        product.id
+        product.id.toString()
       );
       if (productData) {
-        productData.data.products[0].images =
-          await this.prestashopClientService_.retrieveImages(product.id);
+        productData.images = await this.prestashopClientService_.retrieveImages(
+          productData.id.toString()
+        );
 
         await this.prestashopProductService_.create(productData);
       }
@@ -154,9 +145,9 @@ class ImportStrategy extends AbstractBatchJobStrategy {
     //     .create(product);
     // }
 
-    if (products.data.products.length) {
+    if (products.length) {
       this.logger_.info(
-        `${products.data.products.length} products have been imported or updated successfully.`
+        `${products.length} products have been imported or updated successfully.`
       );
     } else {
       this.logger_.info(`No products have been imported or updated.`);

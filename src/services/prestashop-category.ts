@@ -6,8 +6,7 @@ import {
 } from "@medusajs/medusa";
 
 import { EntityManager } from "@medusajs/typeorm";
-import { PluginOptions } from "../types";
-import slugify from "slugify";
+import { Category, PluginOptions } from "../types";
 
 type InjectedDependencies = {
   prestashopClientService: PrestashopClientService;
@@ -30,12 +29,12 @@ class PrestashopCategoryService extends TransactionBaseService {
     this.productCollectionService_ = container.productCollectionService;
   }
 
-  async create(category: any): Promise<void> {
+  async create(category: Category): Promise<void> {
     return this.atomicPhase_(async (manager) => {
       //check if a collection exists for the category
       const existingCollection = await this.productCollectionService_
         .withTransaction(manager)
-        .retrieveByHandle(category.data.categories?.[0]?.link_rewrite || "")
+        .retrieveByHandle(category?.link_rewrite || "")
         .catch(() => undefined);
 
       if (existingCollection) {
@@ -43,9 +42,7 @@ class PrestashopCategoryService extends TransactionBaseService {
       }
 
       //create collection
-      const collectionData = this.normalizeCollection(
-        category.data.categories?.[0]
-      );
+      const collectionData = this.normalizeCollection(category);
       await this.productCollectionService_
         .withTransaction(manager)
         .create(collectionData);
@@ -53,13 +50,11 @@ class PrestashopCategoryService extends TransactionBaseService {
   }
 
   async update(
-    category: any,
+    category: Category,
     existingCollection: ProductCollection
   ): Promise<void> {
     return this.atomicPhase_(async (manager) => {
-      const collectionData = this.normalizeCollection(
-        category.data.categories?.[0]
-      );
+      const collectionData = this.normalizeCollection(category);
 
       const update = {};
 
@@ -97,12 +92,6 @@ class PrestashopCategoryService extends TransactionBaseService {
         prestashop_id: category.id,
       },
     };
-  }
-
-  getHandle(category: { name: string; link_rewrite?: string }) {
-    return this.options_.generateNewHandles || !category.link_rewrite
-      ? slugify(category.name)
-      : category.link_rewrite;
   }
 }
 

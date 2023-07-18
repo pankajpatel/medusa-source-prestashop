@@ -140,18 +140,14 @@ class PrestashopProductService extends TransactionBaseService {
           let optionValue =
             await this.prestashopClientService_.retrieveOptionValues(item.id);
           let optionData = await this.prestashopClientService_.retrieveOption(
-            optionValue.data.product_option_value.id_attribute_group
+            optionValue.id_attribute_group
           );
           if (
             !normalizedProduct.options.some((ele) => {
-              return (
-                ele.metadata.prestashop_id == optionData.data.product_option.id
-              );
+              return ele.metadata.prestashop_id == optionData.id;
             })
           ) {
-            normalizedProduct.options.push(
-              this.normalizeOption(optionData.data.product_option)
-            );
+            normalizedProduct.options.push(this.normalizeOption(optionData));
           }
         }
       }
@@ -209,13 +205,13 @@ class PrestashopProductService extends TransactionBaseService {
             normalizedProduct.options.map((element) => {
               if (
                 element.metadata.prestashop_id ==
-                optionValues.data.product_option_value.id_attribute_group
+                optionValues.id_attribute_group
               ) {
                 let option = {
                   option_id: element.id,
-                  value: optionValues.data.product_option_value.name,
+                  value: optionValues.name,
                   metadata: {
-                    prestashop_id: optionValues.data.product_option_value.id,
+                    prestashop_id: optionValues.id,
                   },
                 };
                 options.push(option);
@@ -233,14 +229,15 @@ class PrestashopProductService extends TransactionBaseService {
             }
           }
 
-          if (stockValue.out_of_stock == 0) {
+          if (!stockValue.out_of_stock) {
             combinationValues.data.combination.allow_backorder = false;
           } else {
             combinationValues.data.combination.allow_backorder = true;
           }
 
           combinationValues.data.combination.inventory_quantity = parseInt(
-            stockValue.quantity
+            stockValue.quantity.toString(),
+            10
           );
 
           const variantData = await this.normalizeVariant(
@@ -369,28 +366,24 @@ class PrestashopProductService extends TransactionBaseService {
           optionsValuePrestashop.push(optionValue.data);
 
           const existingOption = productOptions.find(
-            (o) =>
-              o.metadata.prestashop_id ==
-              optionValue.data.product_option_value.id_attribute_group
+            (o) => o.metadata.prestashop_id == optionValue.id_attribute_group
           );
 
           let option = await this.prestashopClientService_.retrieveOption(
-            optionValue.data.product_option_value.id_attribute_group
+            optionValue.id_attribute_group
           );
 
-          optionsPrestashop.push(option.data);
+          optionsPrestashop.push({ product_option: option });
 
           if (!existingOption) {
             //add option
             await this.productService_
               .withTransaction(manager)
-              .addOption(existingProduct.id, option.data.product_option.name);
+              .addOption(existingProduct.id, option.name);
           }
 
           //update option and its values
-          const normalizedOption = this.normalizeOption(
-            option.data.product_option
-          );
+          const normalizedOption = this.normalizeOption(option);
           delete normalizedOption.values;
 
           await this.productService_
@@ -498,13 +491,13 @@ class PrestashopProductService extends TransactionBaseService {
               productOptions.map((element) => {
                 if (
                   element.metadata.prestashop_id ==
-                  optionValues.data.product_option_value.id_attribute_group
+                  optionValues.id_attribute_group
                 ) {
                   let option = {
                     option_id: element.id,
-                    value: optionValues.data.product_option_value.name,
+                    value: optionValues.name,
                     metadata: {
-                      prestashop_id: optionValues.data.product_option_value.id,
+                      prestashop_id: optionValues.id,
                     },
                   };
                   options.push(option);
@@ -570,13 +563,13 @@ class PrestashopProductService extends TransactionBaseService {
               productOptions.map((element) => {
                 if (
                   element.metadata.prestashop_id ==
-                  optionValues.data.product_option_value.id_attribute_group
+                  optionValues.id_attribute_group
                 ) {
                   let option = {
                     option_id: element.id,
-                    value: optionValues.data.product_option_value.name,
+                    value: optionValues.name,
                     metadata: {
-                      prestashop_id: optionValues.data.product_option_value.id,
+                      prestashop_id: optionValues.id,
                     },
                   };
                   options.push(option);

@@ -7,7 +7,20 @@ import { EntityManager } from "@medusajs/typeorm";
 import { Logger } from "@medusajs/medusa/dist/types/global";
 import { MedusaError } from "medusa-core-utils";
 import { TransactionBaseService } from "@medusajs/medusa";
-import { PluginOptions, SearchCriteria, Stock } from "../types";
+import {
+  CategoriesResponse,
+  Category,
+  PluginOptions,
+  Product,
+  ProductOption,
+  ProductOptionValue,
+  ProductOptionValuesResponse,
+  ProductOptionsResponse,
+  ProductsResponse,
+  SearchCriteria,
+  StockAvailable,
+  StockAvailablesResponse,
+} from "../types";
 // import addOAuthInterceptor from 'axios-oauth-1.0a';
 
 type InjectedDependencies = {
@@ -97,9 +110,9 @@ class PrestashopClientService extends TransactionBaseService {
     return params;
   }
 
-  async retrieveProducts(): Promise<AxiosResponse<Array<Record<string, any>>>> {
-    return this.sendRequest<Array<Record<string, any>>>(
-      `/products/` + this.endUrl
+  async retrieveProducts(): Promise<Array<Product>> {
+    return this.sendRequest<ProductsResponse>(`/products/` + this.endUrl).then(
+      ({ data }) => data.products
     );
   }
 
@@ -141,12 +154,10 @@ class PrestashopClientService extends TransactionBaseService {
     }
   }
 
-  async retrieveProduct(
-    productId?: string
-  ): Promise<AxiosResponse<Record<string, any>[]>> {
-    return this.sendRequest<Record<string, any>[]>(
+  async retrieveProduct(productId?: string): Promise<Product> {
+    return this.sendRequest<ProductsResponse>(
       `/products/` + productId + this.endUrl
-    );
+    ).then(({ data }) => data.products[0]);
   }
 
   async retrieveProductImages(
@@ -231,7 +242,7 @@ class PrestashopClientService extends TransactionBaseService {
   ): Promise<Record<string, any>[]> {
     return this.retrieveProducts().then(async (products) => {
       return await Promise.all(
-        products.data.map(async (variant) => {
+        products.map(async (variant) => {
           //get stock item of that variant
           const { data } = await this.retrieveInventoryData(variant.sku);
 
@@ -244,30 +255,34 @@ class PrestashopClientService extends TransactionBaseService {
     });
   }
   //https://farmaciapaseo51.com/api/products/1360/&ws_key=xxxxxxxx&output_format=JSON
-  async retrieveCategories(
-    lastUpdatedTime?: string
-  ): Promise<AxiosResponse<any>> {
-    return this.sendRequest(`/categories/` + this.endUrl);
+  async retrieveCategories(): Promise<Category[]> {
+    return this.sendRequest<CategoriesResponse>(
+      `/categories/` + this.endUrl
+    ).then(({ data }) => data.categories);
   }
 
-  async retrieveOptionsDefaults(): Promise<AxiosResponse<any>> {
-    return this.sendRequest(`/product_options/` + this.endUrl);
+  async retrieveOptionsDefaults(): Promise<Array<ProductOption>> {
+    return this.sendRequest<ProductOptionsResponse>(
+      `/product_options/` + this.endUrl
+    ).then(({ data }) => data.product_options);
   }
 
-  async retrieveOptionsValues(): Promise<AxiosResponse<any>> {
-    return this.sendRequest(`/product_option_values/` + this.endUrl);
+  async retrieveOptionsValues(): Promise<ProductOptionValue[]> {
+    return this.sendRequest<ProductOptionValuesResponse>(
+      `/product_option_values/` + this.endUrl
+    ).then(({ data }) => data.product_option_values);
   }
 
-  async retrieveOptionValues(optionId?: string): Promise<AxiosResponse<any>> {
-    return this.sendRequest(`/product_option_values/` + optionId + this.endUrl);
+  async retrieveOptionValues(optionId?: string): Promise<ProductOptionValue> {
+    return this.sendRequest<ProductOptionValuesResponse>(
+      `/product_option_values/` + optionId + this.endUrl
+    ).then(({ data }) => data.product_option_values[0]);
   }
 
-  async retrieveStockValues(stockId?: string): Promise<Stock> {
-    return this.sendRequest<{
-      stock_availables: Array<Stock>;
-    }>(`/stock_availables/` + stockId + this.endUrl).then(
-      ({ data }) => data.stock_availables[0]
-    );
+  async retrieveStockValues(stockId?: string): Promise<StockAvailable> {
+    return this.sendRequest<StockAvailablesResponse>(
+      `/stock_availables/` + stockId + this.endUrl
+    ).then(({ data }) => data.stock_availables[0]);
   }
 
   async retrieveCombinationValues(
@@ -276,12 +291,16 @@ class PrestashopClientService extends TransactionBaseService {
     return this.sendRequest(`/combinations/` + combinationId + this.endUrl);
   }
 
-  async retrieveOption(optionId?: string): Promise<AxiosResponse<any>> {
-    return this.sendRequest(`/product_options/` + optionId + this.endUrl);
+  async retrieveOption(optionId?: string): Promise<ProductOption> {
+    return this.sendRequest<ProductOptionsResponse>(
+      `/product_options/` + optionId + this.endUrl
+    ).then(({ data }) => data.product_options[0]);
   }
 
-  async retrieveCategory(categoryID?: string): Promise<AxiosResponse<any>> {
-    return this.sendRequest(`/categories/` + categoryID + this.endUrl);
+  async retrieveCategory(categoryID?: string): Promise<Category> {
+    return this.sendRequest<CategoriesResponse>(
+      `/categories/` + categoryID + this.endUrl
+    ).then(({ data }) => data.categories[0]);
   }
 
   async sendRequest<T = any>(
