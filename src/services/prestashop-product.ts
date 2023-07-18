@@ -16,7 +16,7 @@ import PrestashopClientService from "./prestashop-client";
 import { writeFileSync } from "fs";
 import { EntityManager } from "@medusajs/typeorm";
 import slugify from "slugify";
-import { PluginOptions } from "../types";
+import { PluginOptions, Product as PSProduct } from "../types";
 
 type InjectedDependencies = {
   productService: ProductService;
@@ -72,7 +72,7 @@ class PrestashopProductService extends TransactionBaseService {
   }
 
   async create(productData: any): Promise<void> {
-    const theProduct = productData.data.products[0];
+    const theProduct = productData;
     return this.atomicPhase_(async (manager) => {
       //check if product exists
       const existingProduct: Product = await this.productService_
@@ -319,7 +319,7 @@ class PrestashopProductService extends TransactionBaseService {
   }
 
   async update(productData: any, existingProduct: Product): Promise<void> {
-    const theProduct = productData.data.products[0];
+    const theProduct = productData;
     return this.atomicPhase_(async (manager) => {
       //retrieve store's currencies
 
@@ -729,10 +729,7 @@ class PrestashopProductService extends TransactionBaseService {
       //retrieve store's currencies
       await this.getCurrencies();
 
-      const variantData = await this.normalizeVariant(
-        productData.data.products[0],
-        []
-      );
+      const variantData = await this.normalizeVariant(productData, []);
       delete variantData.options;
       delete variantData.prestashop_id;
 
@@ -824,8 +821,8 @@ class PrestashopProductService extends TransactionBaseService {
     return product;
   }
 
-  normalizeProduct(_product: Record<string, any>): any {
-    const product = _product.data.products[0];
+  normalizeProduct(_product: PSProduct): any {
+    const product = _product;
     product.meta_keywords = (product.meta_keywords || "")
       .split(",")
       .filter((element) => !(element === "" || element === " "));
