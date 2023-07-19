@@ -7,9 +7,7 @@ export interface PluginOptions {
 
 export type SearchCriteria = {
   currentPage: string;
-  filterGroups?: Array<
-    Array<{ field: string; value: string; condition_type: string }>
-  >;
+  filterGroups?: Array<Array<{ field: string; value: string; condition_type: string }>>;
   storeId: string | number;
   currencyCode: string;
 };
@@ -166,4 +164,53 @@ export type Product = {
 
 export type ProductsResponse = {
   products: Array<Product>;
+};
+
+export interface Combination {
+  id: number;
+  id_product: string;
+  location: string;
+  ean13: string;
+  isbn: string;
+  upc: string;
+  mpn: string;
+  quantity: number;
+  reference: string;
+  supplier_reference: string;
+  wholesale_price: string;
+  price: string;
+  ecotax: string;
+  weight: string;
+  unit_price_impact: string;
+  minimal_quantity: string;
+  low_stock_threshold: null | any;
+  low_stock_alert: string;
+  default_on: null | any;
+  available_date: string;
+
+  // Added from Medusa Variant info
+  allow_backorder: any;
+  inventory_quantity: any;
+  associations: {
+    product_option_values: [
+      {
+        id: string;
+      }
+    ];
+    images: [
+      {
+        id: string;
+      },
+      {
+        id: string;
+      },
+      {
+        id: string;
+      }
+    ];
+  };
+}
+
+export type CombinationsResponse = {
+  combinations: Array<Combination>;
 };

@@ -10,6 +10,8 @@ import { TransactionBaseService } from "@medusajs/medusa";
 import {
   CategoriesResponse,
   Category,
+  Combination,
+  CombinationsResponse,
   PluginOptions,
   Product,
   ProductOption,
@@ -105,15 +107,12 @@ class PrestashopClientService extends TransactionBaseService {
       ws_key: this.options_.consumer_key,
     };
 
-    format === "json" &&
-      (params.output_format = format.toUpperCase() as "JSON");
+    format === "json" && (params.output_format = format.toUpperCase() as "JSON");
     return params;
   }
 
   async retrieveProducts(): Promise<Array<Product>> {
-    return this.sendRequest<ProductsResponse>(`/products/` + this.endUrl).then(
-      ({ data }) => data.products
-    );
+    return this.sendRequest<ProductsResponse>(`/products/` + this.endUrl).then(({ data }) => data.products);
   }
 
   async downloadFile(url2): Promise<any> {
@@ -126,9 +125,7 @@ class PrestashopClientService extends TransactionBaseService {
 
   async retrieveImages(productId?: string): Promise<Record<string, any>[]> {
     try {
-      const imagesId = await this.sendRequest(
-        `/images/products/` + productId + this.endUrlXML
-      );
+      const imagesId = await this.sendRequest(`/images/products/` + productId + this.endUrlXML);
       const options = {
         ignoreAttributes: false,
         attributeNamePrefix: "",
@@ -155,14 +152,12 @@ class PrestashopClientService extends TransactionBaseService {
   }
 
   async retrieveProduct(productId?: string): Promise<Product> {
-    return this.sendRequest<ProductsResponse>(
-      `/products/` + productId + this.endUrl
-    ).then(({ data }) => data.products[0]);
+    return this.sendRequest<ProductsResponse>(`/products/` + productId + this.endUrl).then(
+      ({ data }) => data.products[0]
+    );
   }
 
-  async retrieveProductImages(
-    items: Record<string, any>[]
-  ): Promise<Record<string, any>[]> {
+  async retrieveProductImages(items: Record<string, any>[]): Promise<Record<string, any>[]> {
     if (!this.defaultStoreId_ || !this.defaultCurrencyCode_) {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
@@ -204,9 +199,7 @@ class PrestashopClientService extends TransactionBaseService {
 
     const { data } = await this.sendRequest(`/store/storeConfigs`);
 
-    const defaultStore = data.length
-      ? data.find((store) => store.code === "default")
-      : data;
+    const defaultStore = data.length ? data.find((store) => store.code === "default") : data;
 
     if (!this.defaultImagePrefix_) {
       this.defaultImagePrefix_ = `${defaultStore.base_media_url}catalog/product`;
@@ -237,9 +230,7 @@ class PrestashopClientService extends TransactionBaseService {
     return this.sendRequest(`/stockItems/${sku}`);
   }
 
-  async retrieveSimpleProductsAsVariants(
-    productIds: string[]
-  ): Promise<Record<string, any>[]> {
+  async retrieveSimpleProductsAsVariants(productIds: string[]): Promise<Record<string, any>[]> {
     return this.retrieveProducts().then(async (products) => {
       return await Promise.all(
         products.map(async (variant) => {
@@ -256,51 +247,49 @@ class PrestashopClientService extends TransactionBaseService {
   }
   //https://farmaciapaseo51.com/api/products/1360/&ws_key=xxxxxxxx&output_format=JSON
   async retrieveCategories(): Promise<Category[]> {
-    return this.sendRequest<CategoriesResponse>(
-      `/categories/` + this.endUrl
-    ).then(({ data }) => data.categories);
+    return this.sendRequest<CategoriesResponse>(`/categories/` + this.endUrl).then(({ data }) => data.categories);
   }
 
   async retrieveOptionsDefaults(): Promise<Array<ProductOption>> {
-    return this.sendRequest<ProductOptionsResponse>(
-      `/product_options/` + this.endUrl
-    ).then(({ data }) => data.product_options);
+    return this.sendRequest<ProductOptionsResponse>(`/product_options/` + this.endUrl).then(
+      ({ data }) => data.product_options
+    );
   }
 
   async retrieveOptionsValues(): Promise<ProductOptionValue[]> {
-    return this.sendRequest<ProductOptionValuesResponse>(
-      `/product_option_values/` + this.endUrl
-    ).then(({ data }) => data.product_option_values);
+    return this.sendRequest<ProductOptionValuesResponse>(`/product_option_values/` + this.endUrl).then(
+      ({ data }) => data.product_option_values
+    );
   }
 
   async retrieveOptionValues(optionId?: string): Promise<ProductOptionValue> {
-    return this.sendRequest<ProductOptionValuesResponse>(
-      `/product_option_values/` + optionId + this.endUrl
-    ).then(({ data }) => data.product_option_values[0]);
+    return this.sendRequest<ProductOptionValuesResponse>(`/product_option_values/` + optionId + this.endUrl).then(
+      ({ data }) => data.product_option_values[0]
+    );
   }
 
   async retrieveStockValues(stockId?: string): Promise<StockAvailable> {
-    return this.sendRequest<StockAvailablesResponse>(
-      `/stock_availables/` + stockId + this.endUrl
-    ).then(({ data }) => data.stock_availables[0]);
+    return this.sendRequest<StockAvailablesResponse>(`/stock_availables/` + stockId + this.endUrl).then(
+      ({ data }) => data.stock_availables[0]
+    );
   }
 
-  async retrieveCombinationValues(
-    combinationId?: string
-  ): Promise<AxiosResponse<any>> {
-    return this.sendRequest(`/combinations/` + combinationId + this.endUrl);
+  async retrieveCombinationValues(combinationId?: string): Promise<Combination> {
+    return this.sendRequest<CombinationsResponse>(`/combinations/` + combinationId + this.endUrl).then(
+      ({ data }) => data.combinations[0]
+    );
   }
 
   async retrieveOption(optionId?: string): Promise<ProductOption> {
-    return this.sendRequest<ProductOptionsResponse>(
-      `/product_options/` + optionId + this.endUrl
-    ).then(({ data }) => data.product_options[0]);
+    return this.sendRequest<ProductOptionsResponse>(`/product_options/` + optionId + this.endUrl).then(
+      ({ data }) => data.product_options[0]
+    );
   }
 
   async retrieveCategory(categoryID?: string): Promise<Category> {
-    return this.sendRequest<CategoriesResponse>(
-      `/categories/` + categoryID + this.endUrl
-    ).then(({ data }) => data.categories[0]);
+    return this.sendRequest<CategoriesResponse>(`/categories/` + categoryID + this.endUrl).then(
+      ({ data }) => data.categories[0]
+    );
   }
 
   async sendRequest<T = any>(

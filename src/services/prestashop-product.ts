@@ -17,6 +17,7 @@ import { writeFileSync } from "fs";
 import { EntityManager } from "@medusajs/typeorm";
 import slugify from "slugify";
 import { PluginOptions, Product as PSProduct } from "../types";
+import { CreateProductVariantInput } from "@medusajs/medusa/dist/types/product-variant";
 
 type InjectedDependencies = {
   productService: ProductService;
@@ -111,12 +112,8 @@ class PrestashopProductService extends TransactionBaseService {
       normalizedProduct.profile_id = await this.getDefaultShippingProfile();
 
       try {
-        if (theProduct.associations.categories) {
-          await this.setCategory(
-            theProduct.associations.categories,
-            normalizedProduct,
-            manager
-          );
+        if (theProduct?.associations?.categories) {
+          await this.setCategory(theProduct?.associations?.categories, normalizedProduct, manager);
         }
       } catch (error) {
         console.log(error);
@@ -129,19 +126,15 @@ class PrestashopProductService extends TransactionBaseService {
       //out_of_stock 2 = system behaivour
 
       let stockValue = await this.prestashopClientService_.retrieveStockValues(
-        theProduct.associations.stock_availables[0].id
+        theProduct?.associations?.stock_availables?.[0]?.id
       );
 
       // creates the options of the product
 
-      if (theProduct.associations.product_option_values?.length >= 1) {
-        for await (const item of theProduct.associations
-          .product_option_values) {
-          let optionValue =
-            await this.prestashopClientService_.retrieveOptionValues(item.id);
-          let optionData = await this.prestashopClientService_.retrieveOption(
-            optionValue.id_attribute_group
-          );
+      if (theProduct?.associations?.product_option_values?.length) {
+        for await (const item of theProduct?.associations?.product_option_values) {
+          let optionValue = await this.prestashopClientService_.retrieveOptionValues(item.id);
+          let optionData = await this.prestashopClientService_.retrieveOption(optionValue.id_attribute_group);
           if (
             !normalizedProduct.options.some((ele) => {
               return ele.metadata.prestashop_id == optionData.id;
@@ -158,27 +151,21 @@ class PrestashopProductService extends TransactionBaseService {
       //create product
       let product;
       try {
-        product = await this.productService_
-          .withTransaction(manager)
-          .create(normalizedProduct);
+        product = await this.productService_.withTransaction(manager).create(normalizedProduct);
       } catch (error) {
         console.log(error);
       }
 
-      if (theProduct.associations.combinations?.length >= 1) {
+      if (theProduct?.associations?.combinations?.length) {
         //insert the configurable product's simple products as variants
         //re-retrieve product with options
-        product = await this.productService_
-          .withTransaction(manager)
-          .retrieve(product.id, {
-            relations: ["options"],
-          });
+        product = await this.productService_.withTransaction(manager).retrieve(product.id, {
+          relations: ["options"],
+        });
 
         //attached option id to normalized options
         normalizedProduct.options = normalizedProduct.options.map((option) => {
-          const productOption = product.options.find(
-            (o) => o.title === option.title
-          );
+          const productOption = product.options.find((o) => o.title === option.title);
 
           return {
             ...option,
@@ -186,27 +173,13 @@ class PrestashopProductService extends TransactionBaseService {
           };
         });
 
-        // //retrieve simple products as variants
-        // const variants = await this.magentoClientService_
-        //   .retrieveSimpleProductsAsVariants(productData.extension_attributes?.configurable_product_links);
-
-        for await (const item of theProduct.associations.combinations) {
-          let combinationValues =
-            await this.prestashopClientService_.retrieveCombinationValues(
-              item.id
-            );
+        for await (const item of theProduct?.associations?.combinations) {
+          let combinationValues = await this.prestashopClientService_.retrieveCombinationValues(item.id);
           let options = [];
-          for await (const optionValueId of combinationValues.data.combination
-            .associations.product_option_values) {
-            let optionValues =
-              await this.prestashopClientService_.retrieveOptionValues(
-                optionValueId.id
-              );
+          for await (const optionValueId of combinationValues?.associations?.product_option_values || []) {
+            let optionValues = await this.prestashopClientService_.retrieveOptionValues(optionValueId.id);
             normalizedProduct.options.map((element) => {
-              if (
-                element.metadata.prestashop_id ==
-                optionValues.id_attribute_group
-              ) {
+              if (element.metadata.prestashop_id == optionValues.id_attribute_group) {
                 let option = {
                   option_id: element.id,
                   value: optionValues.name,
@@ -219,36 +192,22 @@ class PrestashopProductService extends TransactionBaseService {
             });
           }
 
-          for await (const stockAvailabe of theProduct.associations
-            .stock_availables) {
-            if (stockAvailabe.id_product_attribute == item.id) {
-              stockValue =
-                await this.prestashopClientService_.retrieveStockValues(
-                  stockAvailabe.id
-                );
+          for await (const stockAvailable of theProduct.associations.stock_availables) {
+            if (stockAvailable.id_product_attribute == item.id) {
+              stockValue = await this.prestashopClientService_.retrieveStockValues(stockAvailable.id);
             }
           }
 
-          if (!stockValue.out_of_stock) {
-            combinationValues.data.combination.allow_backorder = false;
-          } else {
-            combinationValues.data.combination.allow_backorder = true;
-          }
+          combinationValues.allow_backorder = stockValue.out_of_stock;
 
-          combinationValues.data.combination.inventory_quantity = parseInt(
-            stockValue.quantity.toString(),
-            10
-          );
+          combinationValues.inventory_quantity = Number(stockValue.quantity);
 
-          const variantData = await this.normalizeVariant(
-            combinationValues.data.combination,
-            options
-          );
+          const variantData = await this.normalizeVariant(combinationValues, options);
 
           try {
             await this.productVariantService_
               .withTransaction(manager)
-              .create(product.id, variantData);
+              .create(product.id, variantData as CreateProductVariantInput);
           } catch (error) {
             console.log(error);
           }
@@ -263,28 +222,26 @@ class PrestashopProductService extends TransactionBaseService {
         // }
       } else {
         //insert a default variant for a simple product
-        if (stockValue.out_of_stock == 0) {
+        if (stockValue.out_of_stock === "0") {
           theProduct.allow_backorder = false;
         } else {
           theProduct.allow_backorder = true;
         }
 
-        theProduct.inventory_quantity = parseInt(stockValue.quantity);
+        theProduct.inventory_quantity = Number(stockValue.quantity);
 
         const variantData = this.normalizeVariant(theProduct, []);
 
         variantData.title = "Default";
 
         try {
-          await this.productVariantService_
-            .withTransaction(manager)
-            .create(product.id, variantData);
+          await this.productVariantService_.withTransaction(manager).create(product.id, variantData);
         } catch (error) {
           console.log(error);
         }
       }
 
-      productImages = [...new Set(productImages)];
+      productImages = Array.from(new Set(productImages));
 
       let productImagesFileService = [];
 
@@ -332,11 +289,7 @@ class PrestashopProductService extends TransactionBaseService {
       let productOptions = existingProduct.options;
 
       if (theProduct.associations.categories) {
-        await this.setCategory(
-          theProduct.associations.categories,
-          normalizedProduct,
-          manager
-        );
+        await this.setCategory(theProduct.associations.categories, normalizedProduct, manager);
       }
 
       let stockValue = await this.prestashopClientService_.retrieveStockValues(
@@ -344,42 +297,30 @@ class PrestashopProductService extends TransactionBaseService {
       );
 
       productOptions = (
-        await this.productService_
-          .withTransaction(manager)
-          .retrieveByExternalId(theProduct.id, {
-            relations: ["options", "options.values"],
-          })
+        await this.productService_.withTransaction(manager).retrieveByExternalId(theProduct.id, {
+          relations: ["options", "options.values"],
+        })
       ).options;
 
       // var newOptions = [];
 
       // has options
-      if (theProduct.associations.product_option_values?.length >= 1) {
+      if (theProduct?.associations?.product_option_values?.length) {
         // retrieve options
-        for await (const item of theProduct.associations
-          .product_option_values) {
-          // theProduct.associations.product_option_values.map(async (item, index)=>{
+        for await (const item of theProduct?.associations?.product_option_values || []) {
+          let optionValue = await this.prestashopClientService_.retrieveOptionValues(item.id);
 
-          let optionValue =
-            await this.prestashopClientService_.retrieveOptionValues(item.id);
+          optionsValuePrestashop.push({ product_option_value: optionValue });
 
-          optionsValuePrestashop.push(optionValue.data);
+          const existingOption = productOptions.find((o) => o.metadata.prestashop_id == optionValue.id_attribute_group);
 
-          const existingOption = productOptions.find(
-            (o) => o.metadata.prestashop_id == optionValue.id_attribute_group
-          );
-
-          let option = await this.prestashopClientService_.retrieveOption(
-            optionValue.id_attribute_group
-          );
+          let option = await this.prestashopClientService_.retrieveOption(optionValue.id_attribute_group);
 
           optionsPrestashop.push({ product_option: option });
 
           if (!existingOption) {
             //add option
-            await this.productService_
-              .withTransaction(manager)
-              .addOption(existingProduct.id, option.name);
+            await this.productService_.withTransaction(manager).addOption(existingProduct.id, option.name);
           }
 
           //update option and its values
@@ -388,36 +329,26 @@ class PrestashopProductService extends TransactionBaseService {
 
           await this.productService_
             .withTransaction(manager)
-            .updateOption(
-              existingProduct.id,
-              existingOption.id,
-              normalizedOption
-            );
+            .updateOption(existingProduct.id, existingOption.id, normalizedOption);
         }
 
         //check if there are options that should be deleted
         const optionsToDelete = (productOptions || []).filter(
           (o) =>
             !optionsPrestashop.find((prestashop_option) => {
-              return (
-                prestashop_option.product_option.id == o.metadata.prestashop_id
-              );
+              return prestashop_option.product_option.id == o.metadata.prestashop_id;
             })
         );
 
         optionsToDelete.forEach(async (option) => {
-          await this.productService_
-            .withTransaction(manager)
-            .deleteOption(existingProduct.id, option.id);
+          await this.productService_.withTransaction(manager).deleteOption(existingProduct.id, option.id);
         });
 
         //re-retrieve product options
         productOptions = (
-          await this.productService_
-            .withTransaction(manager)
-            .retrieveByExternalId(theProduct.id, {
-              relations: ["options", "options.values"],
-            })
+          await this.productService_.withTransaction(manager).retrieveByExternalId(theProduct.id, {
+            relations: ["options", "options.values"],
+          })
         ).options;
       }
 
@@ -427,19 +358,16 @@ class PrestashopProductService extends TransactionBaseService {
       let productImages = normalizedProduct.images;
       delete normalizedProduct.images;
 
-      if (theProduct.associations.combinations?.length >= 1) {
+      if (theProduct.associations.combinations?.length) {
         //attach values to the options
 
         productOptions = (productOptions || []).map((productOption) => {
           const productDataOption = optionsValuePrestashop.find(
-            (o) =>
-              productOption.metadata.prestashop_id ==
-              o.product_option_value.id_attribute_group
+            (o) => productOption.metadata.prestashop_id == o.product_option_value.id_attribute_group
           );
 
           if (productDataOption) {
-            productOption.values =
-              this.normalizeOptionValues(productDataOption).values;
+            productOption.values = this.normalizeOptionValues(productDataOption).values;
           }
 
           return productOption;
@@ -448,15 +376,12 @@ class PrestashopProductService extends TransactionBaseService {
         // delete combinations
 
         existingProduct.variants.map(async (variant, key) => {
-          let existsVariant =
-            await this.prestashopClientService_.retrieveCombinationValues(
-              variant.metadata.prestashop_id
-            );
+          let existsVariant = await this.prestashopClientService_.retrieveCombinationValues(
+            variant.metadata.prestashop_id as string
+          );
           if (existsVariant === null) {
             try {
-              await this.productVariantService_
-                .withTransaction(manager)
-                .delete(variant.id);
+              await this.productVariantService_.withTransaction(manager).delete(variant.id);
               delete existingProduct.variants[key];
             } catch (error) {
               console.log(error);
@@ -464,35 +389,23 @@ class PrestashopProductService extends TransactionBaseService {
           }
         });
 
-        // //retrieve simple products as variants
+        // retrieve simple products as variants
         // const variants = await this.magentoClientService_
         //   .retrieveSimpleProductsAsVariants(productData.extension_attributes?.configurable_product_links);
 
         for await (const item of theProduct.associations.combinations) {
           const existingVariant = existingProduct.variants.find(
-            async (variant) => {
-              return variant.metadata.prestashop_id + "" === item.id;
-            }
+            (variant) => variant.metadata.prestashop_id + "" === item.id
           );
 
-          if (existingVariant != null) {
-            let combinationValues =
-              await this.prestashopClientService_.retrieveCombinationValues(
-                item.id
-              );
+          if (!existingVariant) {
+            let combinationValues = await this.prestashopClientService_.retrieveCombinationValues(item.id);
 
             let options = [];
-            for await (const optionValueId of combinationValues.data.combination
-              .associations.product_option_values) {
-              let optionValues =
-                await this.prestashopClientService_.retrieveOptionValues(
-                  optionValueId.id
-                );
+            for await (const optionValueId of combinationValues?.associations?.product_option_values || []) {
+              let optionValues = await this.prestashopClientService_.retrieveOptionValues(optionValueId.id);
               productOptions.map((element) => {
-                if (
-                  element.metadata.prestashop_id ==
-                  optionValues.id_attribute_group
-                ) {
+                if (element.metadata.prestashop_id == optionValues.id_attribute_group) {
                   let option = {
                     option_id: element.id,
                     value: optionValues.name,
@@ -505,31 +418,17 @@ class PrestashopProductService extends TransactionBaseService {
               });
             }
 
-            for await (const stockAvailabe of theProduct.associations
-              .stock_availables) {
+            for await (const stockAvailabe of theProduct.associations.stock_availables) {
               if (stockAvailabe.id_product_attribute == item.id) {
-                stockValue =
-                  await this.prestashopClientService_.retrieveStockValues(
-                    stockAvailabe.id
-                  );
+                stockValue = await this.prestashopClientService_.retrieveStockValues(stockAvailabe.id);
               }
             }
 
-            combinationValues.data.combination.inventory_quantity = parseInt(
-              stockValue.quantity
-            );
+            combinationValues.inventory_quantity = Number(stockValue.quantity);
 
-            if (stockValue.out_of_stock == 0) {
-              combinationValues.data.combination.allow_backorder = false;
-            } else {
-              combinationValues.data.combination.allow_backorder = true;
-            }
+            combinationValues.allow_backorder = stockValue.out_of_stock !== "0";
 
-            const variantData = await this.normalizeVariant(
-              combinationValues.data.combination,
-              options,
-              theProduct.price
-            );
+            const variantData = await this.normalizeVariant(combinationValues, options, theProduct.price);
 
             variantData.options.forEach((element, key) => {
               if (Object.is(variantData.options.length - 1, key)) {
@@ -540,31 +439,19 @@ class PrestashopProductService extends TransactionBaseService {
             });
 
             try {
-              await this.productVariantService_
-                .withTransaction(manager)
-                .update(existingVariant.id, variantData);
+              await this.productVariantService_.withTransaction(manager).update(existingVariant.id, variantData);
             } catch (error) {
               console.log(error);
             }
           } else {
-            let combinationValues =
-              await this.prestashopClientService_.retrieveCombinationValues(
-                item.id
-              );
+            let combinationValues = await this.prestashopClientService_.retrieveCombinationValues(item.id);
 
             let options = [];
-            for await (const optionValueId of combinationValues.data.combination
-              .associations.product_option_values) {
-              let optionValues =
-                await this.prestashopClientService_.retrieveOptionValues(
-                  optionValueId.id
-                );
+            for await (const optionValueId of combinationValues?.associations?.product_option_values || []) {
+              let optionValues = await this.prestashopClientService_.retrieveOptionValues(optionValueId.id);
 
               productOptions.map((element) => {
-                if (
-                  element.metadata.prestashop_id ==
-                  optionValues.id_attribute_group
-                ) {
+                if (element.metadata.prestashop_id == optionValues.id_attribute_group) {
                   let option = {
                     option_id: element.id,
                     value: optionValues.name,
@@ -577,31 +464,17 @@ class PrestashopProductService extends TransactionBaseService {
               });
             }
 
-            for await (const stockAvailabe of theProduct.associations
-              .stock_availables) {
+            for await (const stockAvailabe of theProduct.associations.stock_availables) {
               if (stockAvailabe.id_product_attribute == item.id) {
-                stockValue =
-                  await this.prestashopClientService_.retrieveStockValues(
-                    stockAvailabe.id
-                  );
+                stockValue = await this.prestashopClientService_.retrieveStockValues(stockAvailabe.id);
               }
             }
 
-            if (stockValue.out_of_stock == 0) {
-              combinationValues.data.combination.allow_backorder = false;
-            } else {
-              combinationValues.data.combination.allow_backorder = true;
-            }
+            combinationValues.allow_backorder = stockValue.out_of_stock !== "0";
 
-            combinationValues.data.combination.inventory_quantity = parseInt(
-              stockValue.quantity
-            );
+            combinationValues.inventory_quantity = Number(stockValue.quantity);
 
-            const variantData = await this.normalizeVariant(
-              combinationValues.data.combination,
-              options,
-              theProduct.price
-            );
+            const variantData = await this.normalizeVariant(combinationValues, options, theProduct.price);
 
             variantData.options.forEach((element, key) => {
               if (Object.is(variantData.options.length - 1, key)) {
@@ -612,9 +485,7 @@ class PrestashopProductService extends TransactionBaseService {
             });
 
             try {
-              await this.productVariantService_
-                .withTransaction(manager)
-                .create(existingProduct.id, variantData);
+              await this.productVariantService_.withTransaction(manager).create(existingProduct.id, variantData);
             } catch (error) {
               console.log(error);
             }
@@ -630,13 +501,13 @@ class PrestashopProductService extends TransactionBaseService {
         // }
       } else {
         //insert a default variant for a simple product
-        if (stockValue.out_of_stock == 0) {
+        if (stockValue.out_of_stock === "0") {
           theProduct.allow_backorder = false;
         } else {
           theProduct.allow_backorder = true;
         }
 
-        theProduct.inventory_quantity = parseInt(stockValue.quantity);
+        theProduct.inventory_quantity = Number(stockValue.quantity);
 
         const variantData = this.normalizeVariant(theProduct, []);
 
@@ -656,9 +527,7 @@ class PrestashopProductService extends TransactionBaseService {
           }
         } else {
           try {
-            await this.productVariantService_
-              .withTransaction(manager)
-              .create(existingProduct.id, variantData);
+            await this.productVariantService_.withTransaction(manager).create(existingProduct.id, variantData);
           } catch (error) {
             console.log(error);
           }
@@ -692,11 +561,9 @@ class PrestashopProductService extends TransactionBaseService {
           productImagesFileService.push(response.url);
         }
 
-        await this.productService_
-          .withTransaction(manager)
-          .update(existingProduct.id, {
-            images: productImagesFileService,
-          });
+        await this.productService_.withTransaction(manager).update(existingProduct.id, {
+          images: productImagesFileService,
+        });
       }
 
       //update product
@@ -714,17 +581,12 @@ class PrestashopProductService extends TransactionBaseService {
       // normalizedProduct.images = productImages;
 
       if (Object.values(update).length) {
-        await this.productService_
-          .withTransaction(manager)
-          .update(existingProduct.id, update);
+        await this.productService_.withTransaction(manager).update(existingProduct.id, update);
       }
     });
   }
 
-  async updateVariant(
-    productData: any,
-    existingVariant: Variant
-  ): Promise<void> {
+  async updateVariant(productData: any, existingVariant: Variant): Promise<void> {
     return this.atomicPhase_(async (manager: EntityManager) => {
       //retrieve store's currencies
       await this.getCurrencies();
@@ -742,9 +604,7 @@ class PrestashopProductService extends TransactionBaseService {
       }
 
       if (Object.values(update).length) {
-        await this.productVariantService_
-          .withTransaction(manager)
-          .update(existingVariant.id, variantData);
+        await this.productVariantService_.withTransaction(manager).update(existingVariant.id, variantData);
       }
     });
   }
@@ -759,52 +619,24 @@ class PrestashopProductService extends TransactionBaseService {
     });
     this.currencies = [];
 
-    this.currencies.push(
-      ...(defaultStore.currencies?.map((currency) => currency.code) || [])
-    );
+    this.currencies.push(...(defaultStore.currencies?.map((currency) => currency.code) || []));
     this.currencies.push(defaultStore.default_currency?.code);
   }
 
   async getDefaultShippingProfile(): Promise<string> {
     if (!this.defaultShippingProfileId.length) {
-      this.defaultShippingProfileId =
-        await this.shippingProfileService_.retrieveDefault();
+      this.defaultShippingProfileId = await this.shippingProfileService_.retrieveDefault();
     }
 
     return this.defaultShippingProfileId;
   }
 
-  async setCategory(
-    categories: Record<string, any>[],
-    product: Record<string, any>,
-    manager: EntityManager
-  ) {
-    //Magento supports multiple categories for a product
-    //since Medusa supports only one collection for a product, we'll
-    //use the category with the highest position
-
-    // categories.sort((a, b) => {
-    //   if (a.position > b.position) {
-    //     return 1;
-    //   }
-
-    //   return a.position < b.position ? -1 : 0;
-    // })
-
-    //retrieve Medusa collection using magento ID
-    const [_, count] = await this.productCollectionService_
-      .withTransaction(manager)
-      .listAndCount();
+  async setCategory(categories: Record<string, any>[], product: Record<string, any>, manager: EntityManager) {
+    const [_, count] = await this.productCollectionService_.withTransaction(manager).listAndCount();
 
     const existingCollections = await this.productCollectionService_
       .withTransaction(manager)
-      .list(
-        {},
-        {
-          skip: 0,
-          take: count,
-        }
-      );
+      .list({}, { skip: 0, take: count });
 
     if (existingCollections.length) {
       product.collection_id = existingCollections.find((collection) => {
@@ -843,9 +675,8 @@ class PrestashopProductService extends TransactionBaseService {
       //   value: product.type_id
       // },
       external_id: product.id,
-      status:
-        product.active == 1 ? ProductStatus.PUBLISHED : ProductStatus.DRAFT,
-      images: product.images?.map((img) => img.href) || [],
+      status: product.active === "1" ? ProductStatus.PUBLISHED : ProductStatus.DRAFT,
+      images: (product.images || [])?.map((img) => img.href) || [],
 
       // images:
       // product.images?.map(
@@ -878,10 +709,7 @@ class PrestashopProductService extends TransactionBaseService {
     return {
       title: variant.id,
       prices: this.currencies.map((currency) => ({
-        amount:
-          itemPrice != undefined
-            ? this.parsePrice(total)
-            : this.parsePrice(variant.price),
+        amount: itemPrice != undefined ? this.parsePrice(total) : this.parsePrice(variant.price),
         currency_code: currency,
       })),
       sku: variant.reference === "" ? null : variant.reference,
@@ -910,11 +738,9 @@ class PrestashopProductService extends TransactionBaseService {
   normalizeOption(option: Record<string, any>): any {
     return {
       title: option.name,
-      values: option.associations.product_option_values.map((value) => ({
+      values: (option?.associations?.product_option_values || []).map((value) => ({
         value: value.id,
-        metadata: {
-          prestashop_value: value.id,
-        },
+        metadata: { prestashop_value: value.id },
       })),
       metadata: {
         prestashop_id: option.id,
@@ -925,9 +751,9 @@ class PrestashopProductService extends TransactionBaseService {
   normalizeOptionValues(option: Record<string, any>): any {
     return {
       values: {
-        value: option.product_option_value.name,
+        value: option?.product_option_value?.name,
         metadata: {
-          prestashop_value: option.product_option_value.id,
+          prestashop_value: option?.product_option_value?.id,
         },
       },
     };
