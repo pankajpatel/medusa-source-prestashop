@@ -45,6 +45,7 @@ class PrestashopProductService extends TransactionBaseService {
   protected storeServices_: StoreService;
   protected currencies: string[];
   protected defaultShippingProfileId: string;
+  protected generatedHandles: Record<string, number>;
 
   // downloadFile = (url) =>
   //   axios({ url, responseType: "arraybuffer" }).then((res) => res.data);
@@ -64,11 +65,25 @@ class PrestashopProductService extends TransactionBaseService {
 
     this.currencies = [];
     this.defaultShippingProfileId = "";
+    this.generatedHandles = {};
+  }
+
+  generateHandle(name) {
+    const handle = slugify(name).toLowerCase();
+    if (this.generatedHandles[handle]) {
+      const count = this.generatedHandles[handle] + 1;
+      const newHandle = `${handle}-${count}`;
+      this.generatedHandles[handle] = count;
+      return newHandle;
+    }
+
+    this.generatedHandles[handle] = 1;
+    return handle;
   }
 
   getHandle(product: { name: string; link_rewrite?: string }) {
     return this.options_.generateNewHandles || !product.link_rewrite
-      ? slugify(product.name).toLowerCase()
+      ? this.generateHandle(product.name)
       : product.link_rewrite;
   }
 
@@ -246,27 +261,27 @@ class PrestashopProductService extends TransactionBaseService {
       let productImagesFileService = [];
 
       if (theProduct.images != undefined) {
-        for await (const element of productImages) {
-          // const res = await this.downloadFile(element);
-          const res = await this.prestashopClientService_.downloadFile(element);
-
-          await writeFileSync("./uploads/tempImage.jpg", res);
-
-          const handle = this.getHandle(theProduct);
-
-          let response = await this.fileService_.upload({
-            fieldname: "files",
-            originalname: `${handle}.jpeg`,
-            encoding: "7bit",
-            mimetype: "image/jpeg",
-            destination: "uploads/",
-            filename: `${handle}.jpeg`,
-            path: "./uploads/tempImage.jpg",
-            size: 52370,
-          });
-
-          productImagesFileService.push(response.url);
-        }
+        const handle = normalizedProduct.handle;
+        await Promise.all(
+          productImages.map((element, index) => {
+            return Promise.resolve()
+              .then(() => this.prestashopClientService_.downloadFile(element))
+              .then((res) => writeFileSync("./uploads/tempImage.jpg", res))
+              .then(() =>
+                this.fileService_.upload({
+                  fieldname: "files",
+                  originalname: `${handle}-${index}.jpeg`,
+                  encoding: "7bit",
+                  mimetype: "image/jpeg",
+                  destination: "uploads/",
+                  filename: `${handle}-${index}.jpeg`,
+                  path: "./uploads/tempImage.jpg",
+                  size: 52370,
+                })
+              )
+              .then((res) => productImagesFileService.push(res.url));
+          })
+        );
 
         await this.productService_.withTransaction(manager).update(product.id, {
           images: productImagesFileService,
@@ -539,27 +554,27 @@ class PrestashopProductService extends TransactionBaseService {
       let productImagesFileService = [];
 
       if (theProduct.images != undefined) {
-        for await (const element of productImages) {
-          // const res = await this.downloadFile(element);
-          const res = await this.prestashopClientService_.downloadFile(element);
-
-          await writeFileSync("./uploads/tempImage.jpg", res);
-
-          const handle = this.getHandle(theProduct);
-
-          let response = await this.fileService_.upload({
-            fieldname: "files",
-            originalname: `${handle}.jpeg`,
-            encoding: "7bit",
-            mimetype: "image/jpeg",
-            destination: "uploads/",
-            filename: `${handle}.jpeg`,
-            path: "./uploads/tempImage.jpg",
-            size: 52370,
-          });
-
-          productImagesFileService.push(response.url);
-        }
+        const handle = normalizedProduct.handle;
+        await Promise.all(
+          productImages.map((element, index) => {
+            return Promise.resolve()
+              .then(() => this.prestashopClientService_.downloadFile(element))
+              .then((res) => writeFileSync("./uploads/tempImage.jpg", res))
+              .then(() =>
+                this.fileService_.upload({
+                  fieldname: "files",
+                  originalname: `${handle}-${index}.jpeg`,
+                  encoding: "7bit",
+                  mimetype: "image/jpeg",
+                  destination: "uploads/",
+                  filename: `${handle}-${index}.jpeg`,
+                  path: "./uploads/tempImage.jpg",
+                  size: 52370,
+                })
+              )
+              .then((res) => productImagesFileService.push(res.url));
+          })
+        );
 
         await this.productService_.withTransaction(manager).update(existingProduct.id, {
           images: productImagesFileService,
