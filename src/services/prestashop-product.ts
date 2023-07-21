@@ -13,7 +13,7 @@ import {
   Variant,
 } from "@medusajs/medusa";
 import PrestashopClientService from "./prestashop-client";
-import { writeFileSync } from "fs";
+import { writeFile } from "fs/promises";
 import { EntityManager } from "@medusajs/typeorm";
 import slugify from "slugify";
 import { PluginOptions, Product as PSProduct } from "../types";
@@ -266,7 +266,8 @@ class PrestashopProductService extends TransactionBaseService {
           productImages.map((element, index) => {
             return Promise.resolve()
               .then(() => this.prestashopClientService_.downloadFile(element))
-              .then((res) => writeFileSync("./uploads/tempImage.jpg", res))
+              .then((res) => writeFile(`./uploads/${handle}-${index}.jpeg`, res))
+
               .then(() =>
                 this.fileService_.upload({
                   fieldname: "files",
@@ -275,7 +276,7 @@ class PrestashopProductService extends TransactionBaseService {
                   mimetype: "image/jpeg",
                   destination: "uploads/",
                   filename: `${handle}-${index}.jpeg`,
-                  path: "./uploads/tempImage.jpg",
+                  path: `./uploads/${handle}-${index}.jpeg`,
                   size: 52370,
                 })
               )
@@ -559,7 +560,7 @@ class PrestashopProductService extends TransactionBaseService {
           productImages.map((element, index) => {
             return Promise.resolve()
               .then(() => this.prestashopClientService_.downloadFile(element))
-              .then((res) => writeFileSync("./uploads/tempImage.jpg", res))
+              .then((res) => writeFile(`./uploads/${handle}-${index}.jpeg`, res))
               .then(() =>
                 this.fileService_.upload({
                   fieldname: "files",
@@ -568,7 +569,7 @@ class PrestashopProductService extends TransactionBaseService {
                   mimetype: "image/jpeg",
                   destination: "uploads/",
                   filename: `${handle}-${index}.jpeg`,
-                  path: "./uploads/tempImage.jpg",
+                  path: `./uploads/${handle}-${index}.jpeg`,
                   size: 52370,
                 })
               )

@@ -1,6 +1,6 @@
 {
-  "name": "medusa-source-prestashop",
-  "version": "0.0.12",
+  "name": "@pankajpatel/medusa-source-prestashop",
+  "version": "0.0.13",
   "description": "Source plugins that allows users to import data from a Prestashop store to Medusa",
   "author": "Juan Soler <juansoler@gmail.com>",
   "license": "MIT",
