@@ -14,3 +14,4 @@ develop.sh
 /services
 /strategies
 /data
+.npmrc

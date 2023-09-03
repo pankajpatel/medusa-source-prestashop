@@ -1,8 +1,8 @@
 {
   "name": "@pankajpatel/medusa-source-prestashop",
-  "version": "0.0.13",
+  "version": "0.0.16",
   "description": "Source plugins that allows users to import data from a Prestashop store to Medusa",
-  "author": "Juan Soler <juansoler@gmail.com>",
+  "author": "Pankaj Patel <hello@pankaj.pro>",
   "license": "MIT",
   "main": "dist/index.js",
   "files": [
@@ -14,8 +14,7 @@
     "ts-build": "tsc",
     "start": "medusa develop",
     "watch": "npm run build -- -w",
-    "prepare": "cross-env NODE_ENV=production npm run build",
-    "postinstall": "npm run build"
+    "prepare": "cross-env NODE_ENV=production npm run build"
   },
   "peerDependencies": {
     "@medusajs/medusa": "^1.6.0",
@@ -32,7 +31,10 @@
     "babel-preset-medusa-package": "^1.1.19",
     "cross-env": "^7.0.3"
   },
-  "repository": "https://github.com/juansoler/medusa-source-prestashop",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pankajpatel/medusa-source-prestashop.git"
+  },
   "keywords": [
     "medusa-plugin",
     "medusa-plugin-source"

@@ -27,7 +27,7 @@ type InjectedDependencies = {
 };
 
 class ImportStrategy extends AbstractBatchJobStrategy {
-  static identifier = "import-prestashop-strategy";
+  static identifier = "import-prestashop";
   static batchType = "import-prestashop";
 
   protected batchJobService_: BatchJobService;
@@ -54,17 +54,13 @@ class ImportStrategy extends AbstractBatchJobStrategy {
 
   async preProcessBatchJob(batchJobId: string): Promise<void> {
     return await this.atomicPhase_(async (transactionManager) => {
-      const batchJob = await this.batchJobService_
-        .withTransaction(transactionManager)
-        .retrieve(batchJobId);
+      const batchJob = await this.batchJobService_.withTransaction(transactionManager).retrieve(batchJobId);
 
-      await this.batchJobService_
-        .withTransaction(transactionManager)
-        .update(batchJob, {
-          result: {
-            progress: 0,
-          },
-        });
+      await this.batchJobService_.withTransaction(transactionManager).update(batchJob, {
+        result: {
+          progress: 0,
+        },
+      });
     });
   }
 
@@ -76,9 +72,7 @@ class ImportStrategy extends AbstractBatchJobStrategy {
     try {
       store = await this.storeService_.retrieve();
     } catch (e) {
-      this.logger_.info(
-        "Skipping Prestashop import since no store is created in Medusa."
-      );
+      this.logger_.info("Skipping Prestashop import since no store is created in Medusa.");
       return;
     }
 
@@ -90,16 +84,12 @@ class ImportStrategy extends AbstractBatchJobStrategy {
     // await categories.map(async (category) => {
     for await (let category of categories) {
       await this.prestashopCategoryService_.create(
-        await this.prestashopClientService_.retrieveCategory(
-          category.id.toString()
-        )
+        await this.prestashopClientService_.retrieveCategory(category.id.toString())
       );
     }
 
     if (categories.length) {
-      this.logger_.info(
-        `${categories.length} categories have been imported or updated successfully.`
-      );
+      this.logger_.info(`${categories.length} categories have been imported or updated successfully.`);
     } else {
       this.logger_.info(`No categories have been imported or updated.`);
     }
@@ -122,13 +112,9 @@ class ImportStrategy extends AbstractBatchJobStrategy {
     // console.log(options)
 
     for (let product of products) {
-      const productData = await this.prestashopClientService_.retrieveProduct(
-        product.id.toString()
-      );
+      const productData = await this.prestashopClientService_.retrieveProduct(product.id.toString());
       if (productData) {
-        productData.images = await this.prestashopClientService_.retrieveImages(
-          productData.id.toString()
-        );
+        productData.images = await this.prestashopClientService_.retrieveImages(productData.id.toString());
 
         await this.prestashopProductService_.create(productData);
       }
@@ -146,9 +132,7 @@ class ImportStrategy extends AbstractBatchJobStrategy {
     // }
 
     if (products.length) {
-      this.logger_.info(
-        `${products.length} products have been imported or updated successfully.`
-      );
+      this.logger_.info(`${products.length} products have been imported or updated successfully.`);
     } else {
       this.logger_.info(`No products have been imported or updated.`);
     }
@@ -196,10 +180,7 @@ class ImportStrategy extends AbstractBatchJobStrategy {
     await this.storeService_.update(payload);
   }
 
-  protected async shouldRetryOnProcessingError(
-    batchJob: BatchJob,
-    err: unknown
-  ): Promise<boolean> {
+  protected async shouldRetryOnProcessingError(batchJob: BatchJob, err: unknown): Promise<boolean> {
     return true;
   }
 
