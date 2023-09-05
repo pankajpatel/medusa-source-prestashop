@@ -1,6 +1,6 @@
 {
   "name": "@pankajpatel/medusa-source-prestashop",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "Source plugins that allows users to import data from a Prestashop store to Medusa",
   "author": "Pankaj Patel <hello@pankaj.pro>",
   "license": "MIT",
@@ -9,7 +9,8 @@
   },
   "main": "dist/index.js",
   "files": [
-    "dist/"
+    "dist/",
+    "src/"
   ],
   "scripts": {
     "seed": "medusa seed -f ./data/seed.json",
