@@ -5,7 +5,6 @@ node_modules
 /*.js
 !index.js
 yarn.lock
-src
 .gitignore
 .eslintrc
 .babelrc

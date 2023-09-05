@@ -120,17 +120,6 @@ class ImportStrategy extends AbstractBatchJobStrategy {
       }
     }
 
-    // Not necessary because there is no way to request Simple Products or Products with combinations. Just above retrieve all
-    // the products and if there are combinations they will be created/updated.
-
-    // retrieve simple products to insert those that don't belong to a configurable product
-    // const simpleProducts = await this.magentoClientService_.retrieveProducts(MagentoProductTypes.SIMPLE, lastUpdatedTime);
-
-    // for (let product of simpleProducts) {
-    //   await this.magentoProductService_
-    //     .create(product);
-    // }
-
     if (products.length) {
       this.logger_.info(`${products.length} products have been imported or updated successfully.`);
     } else {
