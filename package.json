@@ -1,20 +1,20 @@
 {
   "name": "@pankajpatel/medusa-source-prestashop",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "description": "Source plugins that allows users to import data from a Prestashop store to Medusa",
   "author": "Pankaj Patel <hello@pankaj.pro>",
   "license": "MIT",
   "publishConfig": {
     "access": "public"
   },
-  "main": "dist/index.js",
+  "main": "index.js",
   "files": [
     "dist/",
     "src/"
   ],
   "scripts": {
     "seed": "medusa seed -f ./data/seed.json",
-    "build": "babel src --out-dir dist --ignore **/__tests__ --extensions \".ts,.js\"",
+    "build": "babel src --out-dir . --ignore **/__tests__ --extensions \".ts,.js\"",
     "ts-build": "tsc",
     "start": "medusa develop",
     "watch": "npm run build -- -w",
